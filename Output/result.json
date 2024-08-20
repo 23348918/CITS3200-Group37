@@ -1,0 +1,24 @@
+{
+    "id": "chatcmpl-9yE1ihdX2w0qJIzcpgxDxYIaiYKfo",
+    "choices": [
+        {
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+                "content": "AI stands for artificial intelligence. It refers to the development of computer systems that can perform tasks that typically require human intelligence, such as visual perception, speech recognition, decision-making, and language translation. AI technologies include machine learning, neural networks, natural language processing, and robotics.",
+                "refusal": null,
+                "role": "assistant"
+            }
+        }
+    ],
+    "created": 1724140626,
+    "model": "gpt-3.5-turbo-0125",
+    "object": "chat.completion",
+    "system_fingerprint": null,
+    "usage": {
+        "completion_tokens": 55,
+        "prompt_tokens": 21,
+        "total_tokens": 76
+    }
+}
