@@ -13,9 +13,9 @@ def brightness_filter(image: Image.Image, strength: float) -> Image.Image:
 def gaussian_blur_filter(image: Image.Image, strength: float) -> Image.Image:
     return image.filter(ImageFilter.GaussianBlur(radius=strength*5))
 
-def colour_shift_filter(image: Image.Image, strength: float) -> Image.Image:
-    print("colour shift")
-    return image
+def intensity_filter(image: Image.Image, strength: float) -> Image.Image:
+    enhancer = ImageEnhance.Contrast(image)
+    return enhancer.enhance(strength*2 + 1)
 
 ''' https://www.geeksforgeeks.org/opencv-motion-blur-in-python/ '''
 def motion_blur_filter(image: Image.Image, strength: float) -> Image.Image:

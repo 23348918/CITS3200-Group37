@@ -1,6 +1,6 @@
 import argparse
 from PIL import Image
-from filters import darkness_filter, brightness_filter, gaussian_blur_filter, colour_shift_filter, motion_blur_filter
+from filters import darkness_filter, brightness_filter, gaussian_blur_filter, intensity_filter, motion_blur_filter
 from typing import Callable, Dict
 
 def main() -> None:
@@ -8,7 +8,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Apply filters to an image.")
     parser.add_argument("-i", "--input", required=True, help="Path to the input image.")
     parser.add_argument("-o", "--output", required=True, help="Path to save the output image.")
-    parser.add_argument("-f", "--filter", required=True, help="Filter to apply. Choose from: darkness, brightness, gaussian, colour, motion.")
+    parser.add_argument("-f", "--filter", required=True, help="Filter to apply. Choose from: darkness, brightness, gaussian, intensity, motion.")
     parser.add_argument("-s", "--strength", type=float, default=0.5, help="The strength of the filter from 0.0 to 1.0. Default is 0.5.")
 
     args = parser.parse_args()
@@ -18,7 +18,7 @@ def main() -> None:
         "darkness": darkness_filter,
         "brightness": brightness_filter,
         "gaussian": gaussian_blur_filter,
-        "colour": colour_shift_filter,
+        "intensity": intensity_filter,
         "motion": motion_blur_filter,
     }
 
