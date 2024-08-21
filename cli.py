@@ -56,7 +56,7 @@ def main():
     parser.add_argument('llm_model',
                         type=str,
                         choices=['chatgpt', 'gemini', 'claude', 'llama'],
-                        help='Name of desired LLM model to process image or video files (chatgpt, )'
+                        help='Name of desired LLM model to process image or video files'
     )
     parser.add_argument('image_or_video_path',
                         type=str,
@@ -102,7 +102,7 @@ def main():
         print(f"'{path.name}' is not a supported file type. Please use {valid_extensions}", file=sys.stderr)
         sys.exit(1)
 
-    # Example of using the arguments
+    # Verbose output
     if args.verbose:
         print(f"----------------------------------------")
         print(f"Verbose mode enabled")
