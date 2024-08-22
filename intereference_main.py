@@ -3,6 +3,14 @@ from PIL import Image
 from filters import darkness_filter, brightness_filter, gaussian_blur_filter, intensity_filter, motion_blur_filter
 from typing import Callable, Dict
 
+FILTERS: Dict[str, Callable[[Image.Image, float], Image.Image]] = {
+    "darkness": darkness_filter,
+    "brightness": brightness_filter,
+    "gaussian": gaussian_blur_filter,
+    "intensity": intensity_filter,
+    "motion": motion_blur_filter,
+}
+
 def main() -> None:
     # Set up argument parser
     parser = argparse.ArgumentParser(description="Apply filters to an image.")
@@ -14,19 +22,13 @@ def main() -> None:
     args = parser.parse_args()
 
     # Map filter names to filter functions
-    filters: Dict[str, Callable[[Image.Image, float], Image.Image]] = {
-        "darkness": darkness_filter,
-        "brightness": brightness_filter,
-        "gaussian": gaussian_blur_filter,
-        "intensity": intensity_filter,
-        "motion": motion_blur_filter,
-    }
+
 
     # Load the input image
     image = load_image(args.input)
 
     # Apply the selected filter
-    filter_func = filters.get(args.filter)
+    filter_func = FILTERS.get(args.filter)
     if filter_func:
         image = filter_func(image, args.strength)
     else:
