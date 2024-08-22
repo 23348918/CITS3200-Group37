@@ -3,55 +3,54 @@ import sys
 import argparse
 from pathlib import Path
 from pprint import pprint
+from typing import Dict, List
+from api import chatgpt_request, gemini_request, claude_request, llama_request
 
-#  List of widely used image and video extensions
-valid_extensions = ('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tiff', '.tif', '.webp', '.heic', '.heif', '.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv')
+
+VALID_EXTENSIONS = (
+    '.jpg', '.jpeg', '.png', '.bmp', '.gif', 
+    '.tiff', '.tif', '.webp', '.heic', '.heif', 
+    '.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv'
+)
+
+LLMS = {
+    "chatgpt" : chatgpt_request,
+    "gemini" : gemini_request,
+    "claude" : claude_request,
+    "llama" : llama_request
+}
+
 
 def valid_files_dictionary(directory: str) -> dict[str, list[str]]:
-    """
-    @brief Organises each valid file to be stored in a dictionary with the key being the subdirectory location
-
-    @param directory: directory to be turned into dictionary
-    @type directory: str
-    @return: dictionary of all valid files for processing
-    @rtype: dict
-    """
-
     files_dictionary = {}
     
-    # Loop over given directory
-    with os.scandir(directory) as files:
-
-        # Loop over each file in directory
-        for file in files:
-            
-            # Recursively call function if subdirectory is found and add to processing dictionary
-            if file.is_dir():
-                subdir_files = valid_files_dictionary(file.path)
-                files_dictionary.update(subdir_files)
-
-            elif file.is_file() and file.name.endswith(valid_extensions):
-
-                # Add directory to dictionary if doesn't already exist
-                if directory not in files_dictionary:
-                    files_dictionary[directory] = []
-
-                # Add to dictionary
-                files_dictionary[directory].append(file.name)
+    for root, _, files in os.walk(directory):
+        valid_files = [f for f in files if f.endswith(VALID_EXTENSIONS)]
+        if valid_files:
+            files_dictionary[root] = valid_files
     
     return files_dictionary
 
 
-def main():
-    """
-    @brief Acts as the command line interface for the red teaming LLM program.
-
-    """
+def generate_processing_dictionary(args_path: str) -> Dict[str, List[str]]:
+    path = Path(args_path)
     
-    # Create parser with description
-    parser = argparse.ArgumentParser(description="Runs a simulation of an LLM model with image or video files exporting them to a csv file")
+    if path.is_file() and path.suffix in VALID_EXTENSIONS:
+        return {str(path.parent): [path.name]}
+    
+    if path.is_dir():
+        processing_dictionary = valid_files_dictionary(args_path)
+        if not processing_dictionary:
+            print(f"Directory '{path}' does not contain any valid files for processing. Please use {VALID_EXTENSIONS}", file=sys.stderr)
+            sys.exit(1)
+        return processing_dictionary
+    
+    print(f"'{path.name}' is not a supported file type. Please use {VALID_EXTENSIONS}", file=sys.stderr)
+    sys.exit(1)
 
-    # Add parser for LLM model, image or video path (supports sub-directories), custom prompt and verbose
+
+def parse_arguments() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Runs a simulation of an LLM model with image or video files exporting them to a csv file")
     parser.add_argument('llm_model',
                         type=str,
                         choices=['chatgpt', 'gemini', 'claude', 'llama'],
@@ -71,41 +70,19 @@ def main():
                         action='store_true',
                         help='Enables verbose output'
     )
+    return parser.parse_args()
 
-    args = parser.parse_args()
 
-    # Check for valid path and check either 
+def main() -> None:
+    args = parse_arguments()
+
     if not os.path.exists(args.image_or_video_path):
         print(f"'{args.image_or_video_path}' is not a valid image or video path.", file=sys.stderr)
         sys.exit(1)
 
-    path = Path(args.image_or_video_path)
+    processing_dictionary = generate_processing_dictionary(args.image_or_video_path)
 
-    # Dictionary to send for processing images
-    processing_dictionary = {}
-
-    if path.is_file() and args.image_or_video_path.endswith(valid_extensions):
-        path_split = args.image_or_video_path.split("\\")
-
-        dir_part = '\\'.join(path_split[:-1])
-        file_part = path_split[-1]
-
-        processing_dictionary[dir_part] = [file_part]
-
-    elif path.is_dir():
-        # Create dictionary to store valid file images and paths
-        if any(os.scandir(path)):
-            processing_dictionary = valid_files_dictionary(args.image_or_video_path)
-        else:
-            print(f"Directory '{path}' does not contain any valid files for processing. Please use {valid_extensions} ", file=sys.stderr)
-            sys.exit(1)
-
-    # Not a valid file
-    else:
-        print(f"'{path.name}' is not a supported file type. Please use {valid_extensions}", file=sys.stderr)
-        sys.exit(1)
-
-    # Verbose output
+    # TODO: Use Click or something for this instead
     if args.verbose:
         print(f"----------------------------------------")
         print(f"Verbose mode enabled")
@@ -116,35 +93,11 @@ def main():
         print(f"Processing Dictionary: ")
         pprint(processing_dictionary)
 
-    # No valid files to process
-    if not processing_dictionary:
-        print(f"'{path}' contains no valid files to process", file=sys.stderr)
-        sys.exit(1)
 
-    # TODO: Alter images or videos to be processed to the LLM (Project requirement 4)
-    if args.llm_model == 'chatgpt':
+    if args.llm_model in LLMS:
         if args.verbose:
-            print(f"Sending to chatgpt")
-
-            # TODO: Send to chatgpt
-
-    elif args.llm_model == 'gemini':
-        if args.verbose:
-            print(f"Sending to gemini")
-
-            # TODO: Send to gemini
-
-    elif args.llm_model == 'claude':
-        if args.verbose:
-            print(f"Sending to claude")
-
-            # TODO: Send to claude
-
-    elif args.llm_model == 'llama':
-        if args.verbose:
-            print(f"Sending to llama")
-
-            # TODO: Send to llama
+            print(f"Sending to {args.llm_model}")
+        LLMS[args.llm_model]()
 
     # TODO: Process media in the chosen LLM and return JSON output  (Project requirement 5)
 

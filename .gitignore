@@ -162,6 +162,7 @@ cython_debug/
 #.idea/
 
 # Testing
-.test_output.png
+/test
+test_output.png
 
 /Private
