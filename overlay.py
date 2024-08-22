@@ -18,9 +18,9 @@ def enhance_overlay(overlay, effect_type):
 def add_overlay(background_path, output_path, effect_type):
     # Define overlay paths
     overlay_paths = {
-        "rain": "Images\rain.png",
-        "fog": "Images\fog.png",
-        "graffiti": "Images\graffiti.png"
+        "rain": r"Images\rain.png",
+        "fog": r"Images\fog.png",
+        "graffiti": r"Images\graffiti.png"
     }
     
     # Validate effect type and get the overlay path
