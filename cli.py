@@ -20,8 +20,12 @@ LLMS = {
     "llama" : llama_request
 }
 
-
-def valid_files_dictionary(directory: str) -> dict[str, list[str]]:
+"""
+@brief Organises valid files in a directory into a dictionary, with directory paths as keys and lists of file names as values.
+@params directory (str): The path to the directory to be processed.
+@return Dict[str, List[str]]: A dictionary where each key is a directory path and the value is a list of valid file names.
+"""
+def valid_files_dictionary(directory: str) -> Dict[str, List[str]]:
     files_dictionary = {}
     
     for root, _, files in os.walk(directory):
@@ -31,7 +35,11 @@ def valid_files_dictionary(directory: str) -> dict[str, list[str]]:
     
     return files_dictionary
 
-
+"""
+@brief Generates a dictionary of files to process based on whether the input path is a file or a directory.
+@params args_path (str): The path to the file or directory to be processed.
+@return Dict[str, List[str]]: A dictionary where each key is a directory path and the value is a list of file names, or a single file if the path is a file.
+"""
 def generate_processing_dictionary(args_path: str) -> Dict[str, List[str]]:
     path = Path(args_path)
     
@@ -48,7 +56,10 @@ def generate_processing_dictionary(args_path: str) -> Dict[str, List[str]]:
     print(f"'{path.name}' is not a supported file type. Please use {VALID_EXTENSIONS}", file=sys.stderr)
     sys.exit(1)
 
-
+"""
+@brief Parses command-line arguments for running the simulation of an LLM model.
+@return argparse.Namespace: Parsed command-line arguments.
+"""
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Runs a simulation of an LLM model with image or video files exporting them to a csv file")
     parser.add_argument('llm_model',
@@ -72,7 +83,9 @@ def parse_arguments() -> argparse.Namespace:
     )
     return parser.parse_args()
 
-
+"""
+@brief Main function to parse arguments, validate paths, generate processing dictionaries, and run the selected LLM model.
+"""
 def main() -> None:
     args = parse_arguments()
 
@@ -94,10 +107,14 @@ def main() -> None:
         pprint(processing_dictionary)
 
 
-    if args.llm_model in LLMS:
-        if args.verbose:
-            print(f"Sending to {args.llm_model}")
-        LLMS[args.llm_model]()
+    if not args.llm_model in LLMS:
+        print(f"'{args.llm_model}' is not a valid model.", file=sys.stderr)
+        sys.exit(1)
+        
+    if args.verbose:
+        print(f"Sending to {args.llm_model}")
+
+    LLMS[args.llm_model]()
 
     # TODO: Process media in the chosen LLM and return JSON output  (Project requirement 5)
 
