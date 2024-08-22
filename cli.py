@@ -4,9 +4,8 @@ import argparse
 from pathlib import Path
 from pprint import pprint
 
-# TODO: Check if these are supported by all LLMs
-#  Acceptable extensions for chosen LLM models
-valid_extensions = ('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv')
+#  List of widely used image and video extensions
+valid_extensions = ('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tiff', '.tif', '.webp', '.heic', '.heif', '.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv')
 
 def valid_files_dictionary(directory: str) -> dict[str, list[str]]:
     """
@@ -60,7 +59,7 @@ def main():
     )
     parser.add_argument('image_or_video_path',
                         type=str,
-                        help='Path to the input image or video file. Supports folders and sub-folders'
+                        help='Path to the input image or video file. Supports directories and sub-directories'
     )
     parser.add_argument('prompt',
                         type=str,
@@ -70,7 +69,7 @@ def main():
     )
     parser.add_argument('--verbose',
                         action='store_true',
-                        help='Enable verbose output'
+                        help='Enables verbose output'
     )
 
     args = parser.parse_args()
@@ -95,7 +94,11 @@ def main():
 
     elif path.is_dir():
         # Create dictionary to store valid file images and paths
-        processing_dictionary = valid_files_dictionary(args.image_or_video_path)
+        if any(os.scandir(path)):
+            processing_dictionary = valid_files_dictionary(args.image_or_video_path)
+        else:
+            print(f"Directory '{path}' does not contain any valid files for processing. Please use {valid_extensions} ", file=sys.stderr)
+            sys.exit(1)
 
     # Not a valid file
     else:
@@ -112,6 +115,11 @@ def main():
         print(f"----------------------------------------")
         print(f"Processing Dictionary: ")
         pprint(processing_dictionary)
+
+    # No valid files to process
+    if not processing_dictionary:
+        print(f"'{path}' contains no valid files to process", file=sys.stderr)
+        sys.exit(1)
 
     # TODO: Alter images or videos to be processed to the LLM (Project requirement 4)
     if args.llm_model == 'chatgpt':
