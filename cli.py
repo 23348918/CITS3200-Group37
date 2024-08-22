@@ -64,24 +64,24 @@ def parse_arguments() -> argparse.Namespace:
     @return argparse.Namespace: Parsed command-line arguments.
     """
     parser: argparse.ArgumentParser = argparse.ArgumentParser(description="Runs a simulation of an LLM model with image or video files exporting them to a CSV file.")
-    parser.add_argument('llm_model',
+    parser.add_argument("llm_model",
                         type=str,
-                        choices=['chatgpt', 'gemini', 'claude', 'llama'],
-                        help='Name of desired LLM model to process image or video files'
+                        choices=["chatgpt", "gemini", "claude", "llama"],
+                        help="Name of desired LLM model to process image or video files"
     )
-    parser.add_argument('image_or_video_path',
+    parser.add_argument("input_path",
                         type=str,
-                        help='Path to the input image or video file. Supports directories and sub-directories'
+                        help="Path to the input file or directory"
     )
-    parser.add_argument('prompt',
+    parser.add_argument("prompt",
                         type=str,
-                        help='Prompt to give to the LLM for processing.',
+                        help="Prompt to give to the LLM for processing.",
                         default="You are an AI system designed to enhance road safety by accurately identifying potential hazards and providing timely warnings to drivers. Your task is to analyze the following scenarios and respond with appropriate safety recommendations.",
-                        nargs='?'
+                        nargs="?"
     )
-    parser.add_argument('--verbose',
-                        action='store_true',
-                        help='Enables verbose output.'
+    parser.add_argument("--verbose",
+                        action="store_true",
+                        help="Enables verbose output."
     )
     return parser.parse_args()
 
@@ -93,18 +93,18 @@ def main() -> None:
     """
     args: argparse.Namespace = parse_arguments()
 
-    if not os.path.exists(args.image_or_video_path):
-        print(f"'{args.image_or_video_path}' is not a valid image or video path.", file=sys.stderr)
+    if not os.path.exists(args.input_path):
+        print(f"'{args.input_path}' is not a valid image or video path.", file=sys.stderr)
         sys.exit(1)
 
-    processing_dictionary: Dict[str, List[str]] = generate_processing_dictionary(args.image_or_video_path)
+    processing_dictionary: Dict[str, List[str]] = generate_processing_dictionary(args.input_path)
 
     # TODO: Use Click or something for this instead
     if args.verbose:
         print(f"----------------------------------------")
         print(f"Verbose mode enabled")
         print(f"LLM model: {args.llm_model}")
-        print(f"Input path: {args.image_or_video_path}")
+        print(f"Input path: {args.input_path}")
         print(f"Prompt: {args.prompt}")
         print(f"----------------------------------------")
         print(f"Processing Dictionary: ")

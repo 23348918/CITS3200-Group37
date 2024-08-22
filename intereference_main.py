@@ -17,21 +17,18 @@ def parse_arguments() -> argparse.Namespace:
     @return argparse.Namespace: Parsed command-line arguments.
     """
     parser: argparse.ArgumentParser = argparse.ArgumentParser(description="Apply filters to an image.")
-    parser.add_argument("-i", "--input",
-                        required=True,
+    parser.add_argument("input_path",
                         type=str,
                         help="Path to the input image."
     )
-    parser.add_argument("-o", "--output",
-                        required=True,
+    parser.add_argument("output",
                         type=str,
-                        help="Path to save the output image."
+                        help="Path/name of output image."
     )
-    parser.add_argument("-f", "--filter",
-                        required=True,
+    parser.add_argument("filter",
                         type=str,
                         choices=list(FILTERS.keys()),
-                        help="Filter to apply. Choose from: darkness, brightness, gaussian, intensity, motion."
+                        help="Which filter will be applied to the image."
     )
     parser.add_argument("-s", "--strength",
                         type=float,
@@ -47,7 +44,7 @@ def main() -> None:
     """
     args: argparse.Namespace = parse_arguments()
 
-    image: Image.Image = Image.open(args.input)
+    image: Image.Image = Image.open(args.input_path)
     filter_func: Callable[[Image.Image, float], Image.Image] = FILTERS.get(args.filter)
     if not filter_func:
         raise ValueError(f"Unknown filter: {args.filter}")
