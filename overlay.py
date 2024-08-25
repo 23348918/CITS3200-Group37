@@ -15,6 +15,8 @@ def enhance_overlay(overlay: np.ndarray, effect_type: str) -> np.ndarray:
     elif effect_type == "fog":
         # Drastically increase contrast for fog
         return cv2.convertScaleAbs(overlay, alpha=4.0, beta=30)
+    elif effect_type == "lens_flare":
+        return cv2.convertScaleAbs(overlay, alpha=1.5, beta=50)
     else:
         # Default enhancement for rain effect
         return cv2.convertScaleAbs(overlay, alpha=1.0, beta=20)
@@ -30,7 +32,8 @@ def add_overlay(background_path: str, output_path: str, effect_type: str) -> Non
     overlay_paths = {
         "rain": r"Images\rain.png",
         "fog": r"Images\fog.png",
-        "graffiti": r"Images\graffiti.png"
+        "graffiti": r"Images\graffiti.png",
+        "lens-flare": r"Images\lens_flare.png"
     }
 
     # Validate the effect type
@@ -76,7 +79,7 @@ def add_overlay(background_path: str, output_path: str, effect_type: str) -> Non
         elif effect_type == "fog":
             alpha_channel *= 0.6  # More transparent for fog
         else:
-            alpha_channel *= 1.2  # Rain effect
+            alpha_channel *= 1.2  # other effects
 
         alpha_channel = np.clip(alpha_channel, 0, 1)  # Ensure values are between 0 and 1
 
