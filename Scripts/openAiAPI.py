@@ -1,3 +1,4 @@
+#NOTE: Works and tested for OpenAI LLM API only.
 
 from datetime import datetime
 import sys
@@ -5,22 +6,11 @@ from openai import OpenAI
 import json
 import base64
 import argparse
-
 from pydantic import BaseModel
-class AnalysisRespose(BaseModel):
-    description:str
-    reasoning: str
-    action: str
-    
-
-
-#NOTE: Works and tested for OpenAI LLM API only.
 
 
 # ~~~~~~~~~~~~~~~~~ Functions ~~~~~~~~~~~~~~~~~~~~~ Functions ~~~~~~~~~~~~~~~~~~~~~~~ Functions ~~~~~~~~~~~~~~~~~
 
-
-# -------------- batch processing functions-------------
 # authenticate before using the API
 def authenticate(authPath):
     try:
@@ -33,6 +23,7 @@ def authenticate(authPath):
     return client
 
 
+# -------------- batch processing functions-------------
 #upload a jsonl file to be processed as batch
 def uploadBatchFile(filePath:str):
     batch_input_file = client.files.create(
@@ -96,7 +87,7 @@ def checkFineTuningProcess(finetuneID):
 # ------------- END Training/FineTuning Functions END -------------------
 
 
-
+# images stored locally requires to be encoded into base64 before being analysed.
 def encode_image(image_path):
     with open(image_path, "rb") as image_file:
         res = base64.b64encode(image_file.read()).decode('utf-8')
@@ -105,6 +96,11 @@ def encode_image(image_path):
 
 #requires encoded image (encoded_image output)
 def analyseImage(filePath, model="gpt-4o-mini"):
+    
+    class AnalysisRespose(BaseModel):
+        description:str
+        reasoning: str
+        action: str
     image_path = encode_image(filePath)
 
     response = client.beta.chat.completions.parse(
@@ -144,30 +140,21 @@ def analyseImage(filePath, model="gpt-4o-mini"):
     return response
 
 
-
-
-
+# store the output of LLM to json format
 def save_to_json(res):
-    
-    # print(res)
     try:
         output = res.to_dict()
         current_date = datetime.now().date()
         path = f"../Output/{current_date}.json"
+        
         with open (path, 'w') as file:
             json.dump(output,file,indent=4)
-            # file.write(res.toString())
         print(f"Program ran successfully. Check {path} for output")
-
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         exit(1)
-    
-    # print (output.get('choices')[0].get('message'))
-    
-
-
-
+        
+        
 # ~~~~~~~~~~ EndFunctions ~~~~~~~~~~~~~~~~ EndFunctions ~~~~~~~~~~~~~~~~~~ EndFunctions ~~~~~~~~~~~~~~~~~
 
 
