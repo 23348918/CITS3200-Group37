@@ -6,7 +6,7 @@ def enhance_overlay(overlay: np.ndarray, effect_type: str) -> np.ndarray:
     """
     @brief Enhances the overlay image based on the specified effect type.
     @param overlay (np.ndarray): The overlay image to enhance.
-    @param effect_type (str): The type of effect ('rain', 'fog', 'graffiti', 'lens-flare').
+    @param effect_type (str): The type of effect ('rain', 'fog', 'graffiti', 'lens-flare', 'wet-filter').
     @return np.ndarray: The enhanced overlay image.
     """
     if effect_type == "graffiti":
@@ -26,19 +26,20 @@ def add_overlay(background_path: str, output_path: str, effect_type: str) -> Non
     @brief Adds a specified overlay effect to a background image.
     @param background_path (str): Path to the background image.
     @param output_path (str): Path to save the output image.
-    @param effect_type (str): The type of effect to apply ('rain', 'fog', 'graffiti','lens-flare').
+    @param effect_type (str): The type of effect to apply ('rain', 'fog', 'graffiti','lens-flare', 'wet-filter').
     """
     # Define overlay paths
     overlay_paths = {
         "rain": r"Images\rain.png",
         "fog": r"Images\fog.png",
         "graffiti": r"Images\graffiti.png",
-        "lens-flare": r"Images\lens_flare.png"
+        "lens-flare": r"Images\lens_flare.png",
+        "wet-filter": r"Images\wet_filter.png"
     }
 
     # Validate the effect type
     if effect_type not in overlay_paths:
-        print("Invalid effect type. Choose from 'rain', 'graffiti', 'fog', or 'lens-flare'")
+        print("Invalid effect type. Choose from 'rain', 'graffiti', 'fog', 'lens-flare', or 'wet-filter'")
         sys.exit(1)
     
     overlay_path = overlay_paths[effect_type]
