@@ -20,8 +20,8 @@ image_path = encode_image(sys.argv[1])
 
 
 try:
-    # with open("../Private/LanceKeys/APIKey.txt", 'r') as file:
-    with open("../Private/ClientKeys/chatgpt-api.txt", 'r') as file:
+    with open("../Private/LanceKeys/APIKey.txt", 'r') as file:
+    # with open("../Private/ClientKeys/chatgpt-api.txt", 'r') as file:
         apiKey = file.read().strip()
 
 except Exception as e:
@@ -36,6 +36,7 @@ client = OpenAI(
 
 response = client.chat.completions.create(
     model="gpt-4o-mini",
+    
     messages=[
         {
             "role": "system", 
@@ -48,6 +49,7 @@ response = client.chat.completions.create(
                 "Describe potential dangers in the scene. "
                 "Describe what action you would take as a driver. "
                 "Describe the reason for the action."
+                "Store your responses to JSON"
             )
         },
         {
@@ -66,17 +68,23 @@ response = client.chat.completions.create(
                 }
             ]
         }
-    ],    
+    ],
+    response_format = {
+    "type": "json_object"
+    },
     max_tokens=300,
 )
 
 
 
+
+# print(response.choices[0].message.content)
+output  = json.loads(response.choices[0].message.content)
 try:
     current_date = datetime.now().date()
     path = f"../Output/{current_date}.json"
     with open (path, 'w') as file:
-        json.dump(response.to_dict(),file,indent=4)
+        json.dump(output,file,indent=4)
         file.write ("\n\n\n")
     print(f"Program ran successfully. Check {path} for output")
 
