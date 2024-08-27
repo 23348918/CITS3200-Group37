@@ -3,7 +3,7 @@ import csv
 
 api_url = 
 
-api_key = "sk-cmmL2f-KHMKOpqX8uCazOuyfwFnwiJ30zSAAI3_69sT3BlbkFJeuQ0Bn6z-t343pfxZNWloCTj585gkDZobGtr1LbSgA"
+api_key = 
 
 # Send a Get request with the API key in the headers
 headers = {
