@@ -6,10 +6,10 @@ data = {
         {
             "finish_reason": "stop",
             "index": 0,
-            "logprobs": null,
+            "logprobs": None,
             "message": {
                 "content": "{\"description\":\"The car appears to be approaching an intersection with road markings indicating a crosswalk. There’s a public parking sign directing to the left and concrete barriers limiting the road space. Nearby buildings suggest a developed urban area.\",\"reasoning\":\"The clear direction of the parking sign indicates an option for the driver. The presence of barriers suggests caution is needed to navigate the area safely without entering restricted zones.\",\"action\":\"Make a left turn towards the public parking area.\"}",
-                "refusal": null,
+                "refusal": None,
                 "role": "assistant",
                 "tool_calls": [],
                 "parsed": {
@@ -50,4 +50,3 @@ csv_file_path = 'output.csv'
 df.to_csv(csv_file_path, index=False)
 
 print(f'Data has been successfully exported to {csv_file_path}')
-
