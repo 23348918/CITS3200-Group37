@@ -23,20 +23,23 @@ def authenticate(authPath):
     return client
 
 
-# -------------- batch processing functions-------------
-#upload a jsonl file to be processed as batch
-def uploadBatchFile(filePath:str):
-    batch_input_file = client.files.create(
-        file=open("batchinput.jsonl", "rb"),
-        purpose="batch"
-        )
-    return batch_input_file
+# needs jsonl file for batch process or fine tuning process
+# required for batch or fine tuning process
+# uploading files only accept .jsonl file types
+def uploadFile(filePath:str, process:str):
+    input_res = client.files.create(
+        file=open(filePath, "rb"),
+        purpose=process
+    )
+    return input_res
 
+
+# -------------- batch processing functions-------------
 
 # create a batch object for LLM to process, requires the output of uploadBatchFileFunction
 def createBatchFile(uploadBatch: str, description: str = "Default Description"):
     batch_object = client.batches.create(
-        input_file_id=uploadBatch.id,
+        input_file_id=uploadBatch,
         endpoint="/v1/chat/completions",
         completion_window="24h",
         metadata={"description": description}
@@ -52,19 +55,11 @@ def listBatches(limit = 20):
 
 # returns the status of the batch requested
 def checkBatchProcess(batchID):
-    return client.batches.retrieve(batchID)
+    print (client.batches.retrieve(batchID))
 # -------------- END batch processing functions END-------------
 
 
 # ------------- Training/FineTuning Functions -------------------
-# upload training dataset file path (JSONL format) for training 
-def uploadTrainingFile(filePath:str):
-    client_training_input = client.files.create(
-        file=open(filePath, "rb"),
-        purpose="fine-tune"
-    )
-    return client_training_input
-
 
 # used to fine tune the model. requires the output of uploadTrainingFile
 # default is 4o mini
@@ -215,7 +210,6 @@ parser.add_argument(
 
 
 # ~~~~~~~~~~~~~~ main ~~~~~~~~~~~~ main ~~~~~~~~~~~~~ main ~~~~~~~~~~~~
-
 # check flags, unknown stores the unknown flags entered by the user in CLI
 args, unknown = parser.parse_known_args()
 if unknown:
@@ -224,14 +218,50 @@ if unknown:
     sys.exit(1)
     
     
-# client = authenticate("../Private/LanceKeys/APIKey.txt")
-client = authenticate("../Private/ClientKeys/chatgpt-api.txt")
+client = authenticate("../Private/LanceKeys/APIKey.txt")
+# client = authenticate("../Private/ClientKeys/chatgpt-api.txt")
 
 if args.analyse_image:
     result = analyseImage(args.analyse_image)
-    
-    # print (result)
+    print(result.to_dict())
     save_to_json(result)
+
+#NOTE: Need data to test
+if args.process_batch:
+    # # print(args.process_batch)
+    
+    # client.files.delete("file-E84zoo1V3L0L1WJh6a6fdCuN")
+
+    # uploaded_files = (client.files.list())
+    
+    # uploadedfileNames = [item.filename for item in uploaded_files]
+    # uploadedFile = args.process_batch.split('/')[-1]
+    
+    # if uploadedFile in uploadedfileNames:
+    #     print ("Similar file name already being uploaded. \nTerminating...")
+    #     exit(1)
+    upload_input         =   uploadFile(args.process_batch,"batch")
+    upload_input_id      =   upload_input.id
+    print (upload_input_id)
+    print (upload_input)
+    batch_process       =   createBatchFile(upload_input_id)
+    batch_process_id    =   batch_process.id
+    print(batch_process)
+    print(batch_process_id)
+    
+    # where is it stored after batch process?
+    
+#NOTE: Need training data for fine tuning   
+if args.fine_tune:
+    print (args.fine_tune)
+    finetune_input         =   uploadFile(args.fine_tune,"fine-tune")
+    finetune_input_id      =   finetune_input.get("id")
+    finetune_process       =   createBatchFile(finetune_input_id)
+    finetune_process_id    =   finetune_process.get("id")
+    # need to use this fine tuned model for image analysis? 
+
+if args.check_batch:
+    checkBatchProcess(args.check_batch)
 
 
 
