@@ -24,7 +24,7 @@ if response.status_code == 200:
 
     # Write data to the CSV file
     with open(csv_file_path, mode='w', newline='', encoding='utf-8') as file:
-        writer = csv.DictWriter(file, filednames=headers)
+        writer = csv.DictWriter(file, fieldnames=headers)
         writer.writeheader()
 
         # Initialize Image_ID
@@ -45,6 +45,6 @@ if response.status_code == 200:
             }
             writer.writerow(row)
             image_id += 1 # Increment Image_ID with each loop
-    print(f'Data has been successfully exported tp {csv_file_path}')
+    print(f'Data has been successfully exported to {csv_file_path}')
 else:
     print("Failed to retrieve data. Status code:", response.status_code)
