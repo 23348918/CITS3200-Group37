@@ -1,6 +1,6 @@
 import argparse
 from PIL import Image
-from filters import (
+from interference.filters import (
     darkness_filter, 
     brightness_filter, 
     gaussian_blur_filter, 
@@ -100,26 +100,26 @@ def process_video(file_path: str, filter_name: str, strength: float) -> None:
         print(f"Error opening video file {file_path}")
         return
 
-    fps = int(cap.get(cv2.CAP_PROP_FPS))
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fps: int = int(cap.get(cv2.CAP_PROP_FPS))
+    width: int = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height: int = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
     # Create VideoWriter object
-    output_path = f"Output/{filter_name}_{os.path.basename(file_path)}"
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+    output_path: str = f"Output/{filter_name}_{os.path.basename(file_path)}"
+    fourcc: int = cv2.VideoWriter_fourcc(*'mp4v')
+    out: cv2.VideoWriter = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
 
     filter_func: Callable[[Image.Image, float], Image.Image] = FILTERS.get(filter_name)
-    if not filter_func:
-        raise ValueError(f"Unknown filter: {filter_name}")
 
     # Continues frame by frame until it is finished
+    ret: bool
+    frame: np.ndarray
     ret, frame = cap.read()
     while ret:
         # Filters done as a pillow image but video is done with cv2 so need to convert between them
-        pil_image = Image.fromarray(frame)
-        filtered_image = filter_func(pil_image, strength)
-        cv_image = np.array(filtered_image)
+        pil_image: Image.Image = Image.fromarray(frame)
+        filtered_image: Image.Image = filter_func(pil_image, strength)
+        cv_image: np.ndarray = np.array(filtered_image)
 
         out.write(cv_image)
         ret, frame = cap.read()
@@ -133,8 +133,8 @@ def main() -> None:
     args: argparse.Namespace = parse_arguments()
 
     for dir_path, file_name in directory_iterator(args.input_path):
-        file_path = os.path.join(dir_path, file_name)
-        file_extension = os.path.splitext(file_name)[1].lower()
+        file_path: str = os.path.join(dir_path, file_name)
+        file_extension: str = os.path.splitext(file_name)[1].lower()
 
         if file_extension in VIDEO_EXTENSIONS:
             process_video(file_path, args.filter, args.strength)
