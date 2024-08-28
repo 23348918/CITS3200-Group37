@@ -1,7 +1,7 @@
 import sys
 import argparse
-from api.auth import authenticate
-from api.request import analyse_image, save_to_json
+from auth import authenticate
+from request import analyse_image, save_to_json
 
 def parse_arguments() -> argparse.Namespace:
     """Parses command-line arguments for api call.

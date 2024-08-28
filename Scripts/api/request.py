@@ -18,7 +18,7 @@ PROMPT : str = (
 
 
 def encode_image(image_path: str) -> str:
-    """Encodes an image stored locally into a base64 string before being analyzed.
+    """Encodes an image stored locally into a base64 string before being analysed.
 
     Args:
         image_path: Path to the image file.
@@ -32,7 +32,7 @@ def encode_image(image_path: str) -> str:
 
 
 def analyse_image(client: OpenAI, file_path: str, model: Optional[str] = "gpt-4o-mini") -> Dict[str, str]:
-    """Analyzes an image using the specified model and returns the response.
+    """Analyses an image using the specified model and returns the response.
 
     Args:
         file_path: Path to the image file.
