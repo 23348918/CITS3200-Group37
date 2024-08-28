@@ -5,6 +5,7 @@ from pathlib import Path
 from pprint import pprint
 from typing import Dict, List, Tuple, Callable
 from api import chatgpt_request, gemini_request, claude_request, llama_request
+from common import verbose, client
 
 VALID_EXTENSIONS: Tuple[str, ...] = (
     '.jpg', '.jpeg', '.png', '.bmp', '.gif', 
@@ -18,7 +19,6 @@ LLMS: Dict[str, Callable[[], None]] = {
     "claude": claude_request,
     "llama": llama_request
 }
-
 
 def valid_files_dictionary(directory: str) -> Dict[str, List[str]]:
     """
@@ -113,15 +113,12 @@ def main() -> None:
     if args.llm_model not in LLMS:
         print(f"'{args.llm_model}' is not a valid model.", file=sys.stderr)
         sys.exit(1)
-        
-    if args.verbose:
-        print(f"Sending to {args.llm_model}")
-
-    LLMS[args.llm_model]()
 
     # TODO: Process media in the chosen LLM and return JSON output  (Project requirement 5)
+    LLMS[args.llm_model](processing_dictionary)
 
     # TODO: Process to spreadsheet                                  (Project requirement 6)
+    
 
 
 if __name__ == "__main__":
