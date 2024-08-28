@@ -1,6 +1,12 @@
 import argparse
 from PIL import Image
-from filters import darkness_filter, brightness_filter, gaussian_blur_filter, intensity_filter, motion_blur_filter
+from filters import (
+    darkness_filter, 
+    brightness_filter, 
+    gaussian_blur_filter, 
+    intensity_filter, 
+    motion_blur_filter
+)
 from typing import Callable, Dict, Tuple, Iterator
 import os
 import cv2
@@ -25,9 +31,10 @@ VIDEO_EXTENSIONS: Tuple[str, ...] = (
 
 
 def parse_arguments() -> argparse.Namespace:
-    """
-    @brief Parses command-line arguments for applying filters to an image.
-    @return argparse.Namespace: Parsed command-line arguments.
+    """Parses command-line arguments for applying filters to an image.
+    
+    Returns:
+        Parsed command-line arguments.
     """
     parser: argparse.ArgumentParser = argparse.ArgumentParser(description="Apply filters to an image.")
     parser.add_argument("input_path",
@@ -48,20 +55,27 @@ def parse_arguments() -> argparse.Namespace:
 
 
 def directory_iterator(directory: str) -> Iterator[Tuple[str, str]]:
-    """
-    @brief Creates an iterator that yields valid files from a directory and its subdirectories.
-    @return Iterator[Tuple[str, str]]: An iterator that yields tuples of (directory_path, file_name) for valid files.
+    """Creates an iterator that yields valid files from a directory and its subdirectories.
+    
+    Args:
+        directory: The directory path to iterate over.
+
+    Yields:
+        Tuples of (directory_path, file_name) for valid files.
     """
     for root, _, files in os.walk(directory):
         for file in files:
-            if file.lower().endswith(IMAGE_EXTENSIONS+VIDEO_EXTENSIONS):
+            if file.lower().endswith(IMAGE_EXTENSIONS + VIDEO_EXTENSIONS):
                 yield (root, file)
 
 
 def process_image(file_path: str, filter_name: str, strength: float) -> None:
-    """
-    @brief Applies given filter to image and save it in folder called "Output"
-    @return None
+    """Applies the given filter to an image and saves it in a folder called "Output".
+    
+    Args:
+        file_path: Path to the input image file.
+        filter_name: Name of the filter to apply.
+        strength: Strength of the filter effect.
     """
     image: Image.Image = Image.open(file_path)
     filter_func: Callable[[Image.Image, float], Image.Image] = FILTERS.get(filter_name)
@@ -74,16 +88,18 @@ def process_image(file_path: str, filter_name: str, strength: float) -> None:
 
 
 def process_video(file_path: str, filter_name: str, strength: float) -> None:
-    """
-    @brief Applies given filter to video and save it in folder called "Output"
-    @return None
+    """Applies the given filter to a video and saves it in a folder called "Output".
+    
+    Args:
+        file_path: Path to the input video file.
+        filter_name: Name of the filter to apply.
+        strength: Strength of the filter effect.
     """
     cap = cv2.VideoCapture(file_path)
     if not cap.isOpened():
         print(f"Error opening video file {file_path}")
         return
 
-    # Get video properties
     fps = int(cap.get(cv2.CAP_PROP_FPS))
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -111,11 +127,9 @@ def process_video(file_path: str, filter_name: str, strength: float) -> None:
     cap.release()
     out.release()
 
+
 def main() -> None:
-    """
-    @brief Main function to parse arguments, apply the selected filter to the image, and save the result.
-    @return None
-    """
+    """Main function to parse arguments, apply the selected filter to images or videos, and save the results."""
     args: argparse.Namespace = parse_arguments()
 
     for dir_path, file_name in directory_iterator(args.input_path):
@@ -126,6 +140,7 @@ def main() -> None:
             process_video(file_path, args.filter, args.strength)
         elif file_extension in IMAGE_EXTENSIONS:
             process_image(file_path, args.filter, args.strength)
+
 
 if __name__ == "__main__":
     main()
