@@ -2,8 +2,6 @@ import base64
 from typing import Dict, Optional
 from pydantic import BaseModel
 from openai import OpenAI
-import json
-from datetime import datetime
 
 PROMPT : str = (
     "You are a road safety visual assistant installed in a car. Your task is to analyze images of road scenes and provide recommendations for safe driving. "
@@ -74,24 +72,3 @@ def analyse_image(client: OpenAI, file_path: str, model: Optional[str] = "gpt-4o
         response_format=AnalysisResponse,
     )
     return response
-
-
-def save_to_json(response: Dict[str, str]) -> None:
-    """Stores the output of LLM to a JSON file.
-
-    Args:
-        response: The response data to be saved.
-    """
-    try:
-        output: Dict[str, str] = response
-        current_date: datetime = datetime.now().date()
-        path: str = f"../Output/{current_date}.json"
-        
-        with open(path, 'w') as file:
-            json.dump(output, file, indent=4)
-        
-        print(f"Program ran successfully. Check {path} for output.")
-
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-        exit(1)
