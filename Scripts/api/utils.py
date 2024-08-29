@@ -2,6 +2,8 @@ import pandas as pd
 from typing import List, Dict, Any, Optional
 import json
 from datetime import datetime
+import tkinter as tk
+from tkinter import filedialog
 
 def to_csv(data: Dict[str, Any], csv_file_path: Optional[str] = 'output.csv') -> None:
     """Exports the parsed data to a CSV file.
@@ -25,22 +27,34 @@ def to_csv(data: Dict[str, Any], csv_file_path: Optional[str] = 'output.csv') ->
     df.to_csv(csv_file_path, index=False)
 
 
-def save_to_json(response: Dict[str, str]) -> None:
-    """Stores the output of LLM to a JSON file.
+# def save_to_json(response: Dict[str, str]) -> None:
+#     """Stores the output of LLM to a JSON file.
 
-    Args:
-        response: The response data to be saved.
+#     Args:
+#         response: The response data to be saved.
+#     """
+#     try:
+#         output: Dict[str, str] = response
+#         current_date: datetime = datetime.now().date()
+#         path: str = f"../Output/{current_date}.json"
+        
+#         with open(path, 'w') as file:
+#             json.dump(output, file, indent=4)
+        
+#         print(f"Program ran successfully. Check {path} for output.")
+
+#     except Exception as e:
+#         print(f"An unexpected error occurred: {e}")
+#         exit(1)
+
+def select_file() -> str:
+    """Opens a file dialog to select a file.
+
+    Returns:
+        The path to the selected file as a string.
     """
-    try:
-        output: Dict[str, str] = response
-        current_date: datetime = datetime.now().date()
-        path: str = f"../Output/{current_date}.json"
-        
-        with open(path, 'w') as file:
-            json.dump(output, file, indent=4)
-        
-        print(f"Program ran successfully. Check {path} for output.")
+    root = tk.Tk()
+    root.withdraw()
+    file_path: str = filedialog.askopenfilename()
 
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-        exit(1)
+    return file_path

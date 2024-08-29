@@ -45,7 +45,6 @@ def analyse_image(client: OpenAI, file_path: str, model: Optional[str] = "gpt-4o
         action: str
 
     image_path: str = encode_image(file_path)
-
     response: Dict[str, str] = client.beta.chat.completions.parse(
         model=model,
         messages=[

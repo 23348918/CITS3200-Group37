@@ -1,7 +1,9 @@
 import sys
 import argparse
 from auth import authenticate
-from request import analyse_image, save_to_json
+from request import analyse_image
+from utils import save_to_json, select_file
+
 
 def parse_arguments() -> argparse.Namespace:
     """Parses command-line arguments for api call.
@@ -63,22 +65,19 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()  
 
 
-
 def main() -> None:
     "Main function to parse arguments, set up client, analyse the image and save as a json"
-    args, unknown = parse_arguments()
-    if unknown:
-        print(f"Unknown arguments provided: {unknown}")
-        print("For more info try running: python3 script.py --help")
-        sys.exit(1)
-        
-    client = authenticate("../Private/ClientKeys/chatgpt-api.txt")
+    args = parse_arguments()
+    
+    key_file = select_file()
+    client = authenticate(key_file)
 
     if args.analyse_image:
         result = analyse_image(client, args.analyse_image)
+        print(result)
         # TODO: instead of save as a json, give json to export_to_csv
-        save_to_json(result)
+        # save_to_json(result)
 
 
-if __name__ == main:
+if __name__ == "__main__":
     main()
