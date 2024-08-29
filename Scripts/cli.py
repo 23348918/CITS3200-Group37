@@ -5,6 +5,7 @@ from pathlib import Path
 from pprint import pprint
 from typing import Dict, List, Tuple, Callable
 from api import chatgpt_request, gemini_request, claude_request, llama_request
+from common import verbose, client
 
 # Constants
 VALID_EXTENSIONS: Tuple[str, ...] = (
@@ -19,7 +20,6 @@ LLMS: Dict[str, Callable[[], None]] = {
     "claude": claude_request,
     "llama": llama_request
 }
-
 
 def valid_files_dictionary(directory: str) -> Dict[str, List[str]]:
     """Organises valid files in a directory into a dictionary.
@@ -127,14 +127,13 @@ def main() -> None:
     if args.llm_model not in LLMS:
         print(f"'{args.llm_model}' is not a valid model.", file=sys.stderr)
         sys.exit(1)
-        
-    if args.verbose:
-        print(f"Sending to {args.llm_model}")
 
-    LLMS[args.llm_model]()
+    # TODO: Process media in the chosen LLM and return JSON output  (Project requirement 5)
+    LLMS[args.llm_model](processing_dictionary)
 
-    # TODO: Process media in the chosen LLM and return JSON output
-    # TODO: Process to spreadsheet
+    # TODO: Process to spreadsheet                                  (Project requirement 6)
+    
+
 
 if __name__ == "__main__":
     main()
