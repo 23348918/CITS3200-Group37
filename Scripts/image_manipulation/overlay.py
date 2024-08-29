@@ -110,11 +110,11 @@ def process_video(background_path: str, output_path: str, effect_type: str) -> N
         output_path: Path to save the output video.
         effect_type: The type of effect to apply ('rain', 'fog', 'graffiti', 'lens-flare', 'wet-filter').
     """
-    if effect_type not in overlay_paths:
+    if effect_type not in OVERLAY_PATHS:
         print("Invalid effect type. Choose from 'rain', 'graffiti', 'fog', 'lens-flare', or 'wet-filter'")
         sys.exit(1)
     
-    overlay_path = overlay_paths[effect_type]
+    overlay_path = OVERLAY_PATHS[effect_type]
 
     if not background_path.lower().endswith(VIDEO_EXTENSIONS):
         print(f"Invalid file type for background video: {background_path}")
