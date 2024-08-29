@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import sys
-from typing import Tuple
+from typing import Dict, Tuple
 
 # Predefined valid extensions for images and videos
 IMAGE_EXTENSIONS: Tuple[str, ...] = (
@@ -14,12 +14,20 @@ VIDEO_EXTENSIONS: Tuple[str, ...] = (
 )
 
 # Define overlay paths
-overlay_paths = {
+OVERLAY_PATHS = {
     "rain": r"Overlay_Images\rain.png",
     "fog": r"Overlay_Images\fog.png",
     "graffiti": r"Overlay_Images\graffiti.png",
     "lens-flare": r"Overlay_Images\lens_flare.png",
     "wet-filter": r"Overlay_Images\wet_filter.png"
+}
+
+OVERLAY_FUNCTIONS: Dict[str, Tuple[float, int]] = {
+    "graffiti": (1.2, 15),
+    "fog": (4.0, 30),
+    "lens-flare": (1.5, 50),
+    "rain": (1.0, 20),
+    "wet-filter": (1.0, 20)
 }
 
 def enhance_overlay(overlay: np.ndarray, effect_type: str) -> np.ndarray:
@@ -32,14 +40,11 @@ def enhance_overlay(overlay: np.ndarray, effect_type: str) -> np.ndarray:
     Returns:
         The enhanced overlay image.
     """
-    if effect_type == "graffiti":
-        return cv2.convertScaleAbs(overlay, alpha=1.2, beta=15)
-    elif effect_type == "fog":
-        return cv2.convertScaleAbs(overlay, alpha=4.0, beta=30)
-    elif effect_type == "lens_flare":
-        return cv2.convertScaleAbs(overlay, alpha=1.5, beta=50)
-    else:
-        return cv2.convertScaleAbs(overlay, alpha=1.0, beta=20)
+    if effect_type not in OVERLAY_FUNCTIONS:
+        raise ValueError("Invalid effect type")
+    
+    alpha, beta = OVERLAY_FUNCTIONS[effect_type]
+    return cv2.convertScaleAbs(overlay, alpha=alpha, beta=beta)
 
 def process_image(background_path: str, output_path: str, effect_type: str) -> None:
     """Adds a specified overlay effect to a background image.
@@ -49,11 +54,11 @@ def process_image(background_path: str, output_path: str, effect_type: str) -> N
         output_path: Path to save the output image.
         effect_type: The type of effect to apply ('rain', 'fog', 'graffiti', 'lens-flare', 'wet-filter').
     """
-    if effect_type not in overlay_paths:
+    if effect_type not in OVERLAY_PATHS:
         print("Invalid effect type. Choose from 'rain', 'graffiti', 'fog', 'lens-flare', or 'wet-filter'")
         sys.exit(1)
     
-    overlay_path = overlay_paths[effect_type]
+    overlay_path = OVERLAY_PATHS[effect_type]
 
     if not background_path.lower().endswith(IMAGE_EXTENSIONS):
         print(f"Invalid file type for background image: {background_path}")
