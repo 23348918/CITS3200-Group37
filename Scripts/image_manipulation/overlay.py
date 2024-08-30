@@ -1,26 +1,6 @@
-import cv2
+from PIL import Image, ImageEnhance, ImageFilter
 import numpy as np
-import sys
 from typing import Dict, Tuple
-
-# Predefined valid extensions for images and videos
-IMAGE_EXTENSIONS: Tuple[str, ...] = (
-    '.jpg', '.jpeg', '.png', '.bmp', '.gif', 
-    '.tiff', '.tif', '.webp', '.heic', '.heif'
-)
-
-VIDEO_EXTENSIONS: Tuple[str, ...] = (
-    '.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv'
-)
-
-# Define overlay paths
-OVERLAY_PATHS = {
-    "rain": r"Overlay_Images\rain.png",
-    "fog": r"Overlay_Images\fog.png",
-    "graffiti": r"Overlay_Images\graffiti.png",
-    "lens-flare": r"Overlay_Images\lens_flare.png",
-    "wet-filter": r"Overlay_Images\wet_filter.png"
-}
 
 OVERLAY_FUNCTIONS: Dict[str, Tuple[float, int]] = {
     "graffiti": (1.2, 15),
@@ -30,8 +10,8 @@ OVERLAY_FUNCTIONS: Dict[str, Tuple[float, int]] = {
     "wet-filter": (1.0, 20)
 }
 
-def enhance_overlay(overlay: np.ndarray, effect_type: str) -> np.ndarray:
-    """Enhances the overlay image based on the specified effect type.
+def enhance_overlay(overlay: Image.Image, effect_type: str) -> Image.Image:
+    """Enhances the overlay image based on the specified effect type using PIL.
     
     Args:
         overlay: The overlay image to enhance.
@@ -44,142 +24,60 @@ def enhance_overlay(overlay: np.ndarray, effect_type: str) -> np.ndarray:
         raise ValueError("Invalid effect type")
     
     alpha, beta = OVERLAY_FUNCTIONS[effect_type]
-    return cv2.convertScaleAbs(overlay, alpha=alpha, beta=beta)
+    enhancer = ImageEnhance.Brightness(overlay)
+    overlay = enhancer.enhance(alpha)
+    
+    # Adjusting contrast for a more pronounced effect
+    enhancer = ImageEnhance.Contrast(overlay)
+    overlay = enhancer.enhance(beta / 10.0)
+    
+    return overlay
 
-def process_image(background_path: str, output_path: str, effect_type: str) -> None:
-    """Adds a specified overlay effect to a background image.
+def process_image_overlay(background: Image.Image, effect_type: str, overlay_path: str) -> Image.Image:
+    """Adds a specified overlay effect to a background image using PIL.
     
     Args:
-        background_path: Path to the background image.
-        output_path: Path to save the output image.
+        background: The background image as a PIL Image object.
         effect_type: The type of effect to apply ('rain', 'fog', 'graffiti', 'lens-flare', 'wet-filter').
+        overlay_path: Path to the overlay image.
+
+    Returns:
+        The processed Image object with the overlay applied.
     """
-    if effect_type not in OVERLAY_PATHS:
-        print("Invalid effect type. Choose from 'rain', 'graffiti', 'fog', 'lens-flare', or 'wet-filter'")
-        sys.exit(1)
-    
-    overlay_path = OVERLAY_PATHS[effect_type]
-
-    if not background_path.lower().endswith(IMAGE_EXTENSIONS):
-        print(f"Invalid file type for background image: {background_path}")
-        print(f"Supported formats: {', '.join(IMAGE_EXTENSIONS)}")
-        sys.exit(1)
-
-    background: np.ndarray = cv2.imread(background_path)
-    overlay: np.ndarray = cv2.imread(overlay_path, cv2.IMREAD_UNCHANGED)
+    overlay = Image.open(overlay_path).convert("RGBA")
 
     if effect_type == "fog":
-        new_width = int(background.shape[1] * 1.8)
-        new_height = int(background.shape[0] * 1.8)
-        overlay = cv2.resize(overlay, (new_width, new_height))
-        start_x = (overlay.shape[1] - background.shape[1]) // 2
-        start_y = (overlay.shape[0] - background.shape[0]) // 2
-        overlay = overlay[start_y:start_y + background.shape[0], start_x:start_x + background.shape[1]]
+        new_size = (int(background.size[0] * 1.8), int(background.size[1] * 1.8))
+        overlay = overlay.resize(new_size, Image.Resampling.LANCZOS)
+        start_x = (overlay.size[0] - background.size[0]) // 2
+        start_y = (overlay.size[1] - background.size[1]) // 2
+        overlay = overlay.crop((start_x, start_y, start_x + background.size[0], start_y + background.size[1]))
     else:
-        overlay = cv2.resize(overlay, (background.shape[1], background.shape[0]))
+        overlay = overlay.resize(background.size, Image.Resampling.LANCZOS)
 
     overlay = enhance_overlay(overlay, effect_type)
 
-    if overlay.shape[2] == 4:
-        overlay_rgb: np.ndarray = overlay[:, :, :3]
-        alpha_channel: np.ndarray = overlay[:, :, 3] / 255.0
-        
-        if effect_type == "graffiti":
-            alpha_channel *= 1.0
-        elif effect_type == "fog":
-            alpha_channel *= 0.6
-        else:
-            alpha_channel *= 1.2
-
-        alpha_channel = np.clip(alpha_channel, 0, 1)
-
-        for c in range(3):
-            background[:, :, c] = (alpha_channel * overlay_rgb[:, :, c] +
-                                   (1 - alpha_channel) * background[:, :, c])
-    else:
-        alpha_channel: float = 0.7
-        background = cv2.addWeighted(background, 1, overlay, alpha_channel, 0)
-
-    cv2.imwrite(output_path, background)
-
-def process_video(background_path: str, output_path: str, effect_type: str) -> None:
-    """Processes a video with the specified overlay effect.
+    # Blend the overlay and background
+    blended = Image.alpha_composite(background.convert("RGBA"), overlay)
     
+    return blended.convert("RGB")
+
+def process_video_overlay(background: Image.Image, effect_type: str, overlay_path: str) -> Image.Image:
+    """Adds a specified overlay effect to a video frame using PIL.
+
     Args:
-        background_path: Path to the background video.
-        output_path: Path to save the output video.
+        background: The background frame as a PIL Image object.
         effect_type: The type of effect to apply ('rain', 'fog', 'graffiti', 'lens-flare', 'wet-filter').
+        overlay_path: Path to the overlay image.
+
+    Returns:
+        The processed Image object with the overlay applied.
     """
-    if effect_type not in OVERLAY_PATHS:
-        print("Invalid effect type. Choose from 'rain', 'graffiti', 'fog', 'lens-flare', or 'wet-filter'")
-        sys.exit(1)
+    overlay_image = Image.open(overlay_path).convert("RGBA")
+    overlay_image = overlay_image.resize(background.size, Image.Resampling.LANCZOS)
+    overlay_image = enhance_overlay(overlay_image, effect_type)
+
+    # Blend the overlay and background
+    blended = Image.alpha_composite(background.convert("RGBA"), overlay_image)
     
-    overlay_path = OVERLAY_PATHS[effect_type]
-
-    if not background_path.lower().endswith(VIDEO_EXTENSIONS):
-        print(f"Invalid file type for background video: {background_path}")
-        print(f"Supported formats: {', '.join(VIDEO_EXTENSIONS)}")
-        sys.exit(1)
-
-    video_capture = cv2.VideoCapture(background_path)
-    frame_width = int(video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
-    frame_height = int(video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    fps = int(video_capture.get(cv2.CAP_PROP_FPS))
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    video_writer = cv2.VideoWriter(output_path, fourcc, fps, (frame_width, frame_height))
-
-    overlay: np.ndarray = cv2.imread(overlay_path, cv2.IMREAD_UNCHANGED)
-    overlay = cv2.resize(overlay, (frame_width, frame_height))
-    overlay = enhance_overlay(overlay, effect_type)
-
-    while True:
-        ret, frame = video_capture.read()
-        if not ret:
-            break
-
-        if overlay.shape[2] == 4:
-            overlay_rgb: np.ndarray = overlay[:, :, :3]
-            alpha_channel: np.ndarray = overlay[:, :, 3] / 255.0
-            
-            if effect_type == "graffiti":
-                alpha_channel *= 1.0
-            elif effect_type == "fog":
-                alpha_channel *= 0.6
-            else:
-                alpha_channel *= 1.2
-
-            alpha_channel = np.clip(alpha_channel, 0, 1)
-
-            for c in range(3):
-                frame[:, :, c] = (alpha_channel * overlay_rgb[:, :, c] +
-                                  (1 - alpha_channel) * frame[:, :, c])
-        else:
-            alpha_channel: float = 0.7
-            frame = cv2.addWeighted(frame, 1, overlay, alpha_channel, 0)
-
-        video_writer.write(frame)
-
-    video_capture.release()
-    video_writer.release()
-
-def main() -> None:
-    """Main function to handle command-line arguments and apply the overlay effect."""
-    if len(sys.argv) < 4:
-        print("Usage: python3 overlay.py <background_path> <output_path> <effect_type>")
-        print("Example: python3 overlay.py traffic.jpg output.jpg graffiti")
-        sys.exit(1)
-    
-    background_path: str = sys.argv[1]
-    output_path: str = sys.argv[2]
-    effect_type: str = sys.argv[3].lower()
-
-    if background_path.lower().endswith(IMAGE_EXTENSIONS):
-        process_image(background_path, output_path, effect_type)
-    elif background_path.lower().endswith(VIDEO_EXTENSIONS):
-        process_video(background_path, output_path, effect_type)
-    else:
-        print("Invalid file type. Please provide a valid image or video file.")
-        sys.exit(1)
-
-if __name__ == "__main__":
-    main()
+    return blended.convert("RGB")
