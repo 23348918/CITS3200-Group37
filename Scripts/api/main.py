@@ -5,14 +5,7 @@ from pathlib import Path
 from pprint import pprint
 from typing import Dict, List, Tuple, Callable
 from api_selector import chatgpt_request, gemini_request, claude_request, llama_request
-from common import verbose, client
-
-# Constants
-VALID_EXTENSIONS: Tuple[str, ...] = (
-    '.jpg', '.jpeg', '.png', '.bmp', '.gif',
-    '.tiff', '.tif', '.webp', '.heic', '.heif',
-    '.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv'
-)
+from common import VALID_EXTENSIONS, PROMPT, set_verbose
 
 LLMS: Dict[str, Callable[[], None]] = {
     "chatgpt": chatgpt_request,
@@ -93,7 +86,7 @@ def parse_arguments() -> argparse.Namespace:
         "prompt",
         type=str,
         help="Prompt for the LLM for processing.",
-        default="You are an AI system designed to enhance road safety by accurately identifying potential hazards and providing timely warnings to drivers. Your task is to analyze the following scenarios and respond with appropriate safety recommendations.",
+        default=PROMPT,
         nargs="?"
     )
     parser.add_argument(
@@ -115,6 +108,7 @@ def main() -> None:
     processing_dictionary: Dict[str, List[str]] = generate_processing_dictionary(args.input_path)
 
     if args.verbose:
+        set_verbose(True)
         print(f"----------------------------------------")
         print(f"Verbose mode enabled")
         print(f"LLM model: {args.llm_model}")
