@@ -32,7 +32,12 @@ def valid_files_dictionary(directory: str) -> Dict[str, List[str]]:
     
     return files_dictionary
 
-
+ # Code Review NOTE TODO : 
+ # I think it would be better to just recursivly call this function 
+ # ifdir -> go into that path for item in that path, if isfile() add to dict, else recusive call the func.
+ # The proces of the function valid_files_dictionary (above) is similar to if path.isfile()
+ # with little modification we can do this recursively.
+ 
 def generate_processing_dictionary(path_str: str) -> Dict[str, List[str]]:
     """Generates a dictionary of files to process based on whether the input path is a file or a directory.
     
@@ -101,10 +106,15 @@ def main() -> None:
     """Main function to parse arguments, validate paths, generate processing dictionaries, and run the selected LLM model."""
     args: argparse.Namespace = parse_arguments()
 
+
+    # Code Review NOTE TODO : 
+    # I dont think this is needed since it is already checked in generate_processing_dictionary function below
+    # Also check the function generate_processing dictionary. seems this can be recursively called if path is dir.
     if not os.path.exists(args.input_path):
         print(f"'{args.input_path}' is not a valid image or video path.", file=sys.stderr)
         sys.exit(1)
-
+        
+        
     processing_dictionary: Dict[str, List[str]] = generate_processing_dictionary(args.input_path)
 
     if args.verbose:
@@ -121,6 +131,7 @@ def main() -> None:
     if args.llm_model not in LLMS:
         print(f"'{args.llm_model}' is not a valid model.", file=sys.stderr)
         sys.exit(1)
+        
 
     # TODO: Process media in the chosen LLM and return JSON output  (Project requirement 5)
     LLMS[args.llm_model](processing_dictionary)

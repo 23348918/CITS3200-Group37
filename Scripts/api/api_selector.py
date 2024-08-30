@@ -2,7 +2,7 @@ from auth import authenticate
 from request import analyse_image
 from typing import Dict, List
 import common as common
-from utils import to_csv
+from utils import generate_csv_output
 
 def chatgpt_request(processing_directory: Dict[str, List[str]]) -> None:
     # TODO: Currently only works for 1 image, allow for working with multiple and subdirectories
@@ -12,17 +12,19 @@ def chatgpt_request(processing_directory: Dict[str, List[str]]) -> None:
     # Process each media in processing dictionary into a separate CSV file for each
     for key in processing_directory:
 
+        # NOTE : change the path_string to use / instead of \ as mac and linux only takes /
         for file in processing_directory[key]:
-            path_str: str = f"{key}\{file}"
-
+            path_str: str = f"{key}/{file}"
+            
             if common.verbose:
                 print(f"Sending {path_str} to chatgpt-4o-mini...")
             result_dict: Dict[str, str] = analyse_image(path_str)
             if common.verbose:
                 print(f"Received result from chatgpt-4o-mini: {result_dict}")
 
+            # NOTE : changed function name to generate_csv_output
             # Output to given file csv
-            to_csv(result_dict)
+            generate_csv_output(result_dict)
             if common.verbose:
                 print("Media has been successfully exported to csv.")
     pass
