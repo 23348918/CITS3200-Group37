@@ -106,10 +106,6 @@ def main() -> None:
     """Main function to parse arguments, validate paths, generate processing dictionaries, and run the selected LLM model."""
     args: argparse.Namespace = parse_arguments()
 
-
-    # Code Review NOTE TODO : 
-    # I dont think this is needed since it is already checked in generate_processing_dictionary function below
-    # Also check the function generate_processing dictionary. seems this can be recursively called if path is dir.
     if not os.path.exists(args.input_path):
         print(f"'{args.input_path}' is not a valid image or video path.", file=sys.stderr)
         sys.exit(1)
