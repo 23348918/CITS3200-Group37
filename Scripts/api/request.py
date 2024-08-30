@@ -2,6 +2,8 @@ import base64
 from typing import Dict, Optional
 from pydantic import BaseModel
 from openai import OpenAI
+import common
+import json
 
 PROMPT : str = (
     "You are a road safety visual assistant installed in a car. Your task is to analyze images of road scenes and provide recommendations for safe driving. "
@@ -29,7 +31,7 @@ def encode_image(image_path: str) -> str:
     return encoded_image
 
 
-def analyse_image(client: OpenAI, file_path: str, model: Optional[str] = "gpt-4o-mini") -> Dict[str, str]:
+def analyse_image(file_path: str, model: Optional[str] = "gpt-4o-mini") -> Dict[str, str]:
     """Analyses an image using the specified model and returns the response.
 
     Args:
@@ -45,7 +47,7 @@ def analyse_image(client: OpenAI, file_path: str, model: Optional[str] = "gpt-4o
         action: str
 
     image_path: str = encode_image(file_path)
-    response: Dict[str, str] = client.beta.chat.completions.parse(
+    response: Dict[str, str] = common.client.beta.chat.completions.parse(
         model=model,
         messages=[
             {
@@ -70,4 +72,7 @@ def analyse_image(client: OpenAI, file_path: str, model: Optional[str] = "gpt-4o
         ],
         response_format=AnalysisResponse,
     )
-    return response
+
+    # Convert to dict then json string
+    response_dict = response.dict()  # Convert the pydantic model to a dictionary
+    return response_dict
