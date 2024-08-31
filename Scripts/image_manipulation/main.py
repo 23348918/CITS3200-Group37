@@ -65,28 +65,36 @@ def parse_arguments() -> argparse.Namespace:
                         default=0.5,
                         help="If a filter is chosen, the strength of the filter from 0.0 to 1.0. Default is 0.5."
     )
+    parser.add_argument("-v", "--verbose",
+                        action="store_true",
+                        help="Enable verbose output."
+    )
     return parser.parse_args()  
 
-def directory_iterator(directory: Path) -> Iterator[Path]:
+def directory_iterator(directory: Path, verbose: bool = False) -> Iterator[Path]:
     """Creates an iterator that yields valid files from a directory and its subdirectories.
     
     Args:
         directory: The directory path to iterate over.
+        verbose: Whether to print detailed output during iteration.
 
     Yields:
         Paths to valid files.
     """
     for path in directory.rglob('*'):
         if path.suffix.lower() in IMAGE_EXTENSIONS + VIDEO_EXTENSIONS:
+            if verbose:
+                print(f"Processing file: {path}")
             yield path
 
-def process_image(file_path: Path, effect_name: str, strength: float) -> None:
+def process_image(file_path: Path, effect_name: str, strength: float, verbose: bool = False) -> None:
     """Applies the given effect to an image and saves it in a folder called "Output".
     
     Args:
         file_path: Path to the input image file.
         effect_name: Name of the effect to apply.
         strength: Strength of the filter effect.
+        verbose: Whether to print detailed output during processing.
     """
     output_dir = Path("Output")
     output_dir.mkdir(exist_ok=True)  # Create output directory if it doesn't exist
@@ -96,19 +104,27 @@ def process_image(file_path: Path, effect_name: str, strength: float) -> None:
 
     if effect_name in FILTERS:
         filter_func: Callable[[Image.Image, float], Image.Image] = FILTERS[effect_name]
+        if verbose:
+            print(f"Applying {effect_name} effect to image {file_path} with strength {strength}")
         image = filter_func(image, strength)
     elif effect_name in OVERLAYS:
+        if verbose:
+            print(f"Applying {effect_name} effect to image {file_path}")
         image = process_image_overlay(image, effect_name, OVERLAYS[effect_name])
     
     image.save(output_path)
 
-def process_video(file_path: Path, effect_name: str, strength: float) -> None:
+    if verbose:
+        print(f"Saved processed image to {output_path}")
+
+def process_video(file_path: Path, effect_name: str, strength: float, verbose: bool = False) -> None:
     """Applies the given effect to a video and saves it in a folder called 'Output'.
 
     Args:
         file_path: Path to the input video file.
         effect_name: Name of the effect to apply.
         strength: Strength of the filter effect.
+        verbose: Whether to print detailed output during processing.
     """
     cap = cv2.VideoCapture(str(file_path))
     if not cap.isOpened():
@@ -125,6 +141,9 @@ def process_video(file_path: Path, effect_name: str, strength: float) -> None:
 
     fourcc: int = cv2.VideoWriter_fourcc(*'mp4v')
     out: cv2.VideoWriter = cv2.VideoWriter(str(output_path), fourcc, fps, (width, height))
+
+    if verbose:
+        print(f"Applying {effect_name} effect to video {file_path} with strength {strength}")
 
     filter_func = FILTERS.get(effect_name)
     overlay_path = OVERLAYS.get(effect_name)
@@ -150,20 +169,21 @@ def process_video(file_path: Path, effect_name: str, strength: float) -> None:
     cap.release()
     out.release()
 
+    if verbose:
+        print(f"Saved processed video to {output_path}")
 
 def main() -> None:
     """Main function to parse arguments, apply the selected filter to images or videos, and save the results."""
     args: argparse.Namespace = parse_arguments()
     input_path = Path(args.input_path)
 
-    for file_path in directory_iterator(input_path):
+    for file_path in directory_iterator(input_path, args.verbose):
         file_extension = file_path.suffix.lower()
 
         if file_extension in VIDEO_EXTENSIONS:
-            process_video(file_path, args.effect, args.strength)
+            process_video(file_path, args.effect, args.strength, args.verbose)
         elif file_extension in IMAGE_EXTENSIONS:
-            process_image(file_path, args.effect, args.strength)
-
+            process_image(file_path, args.effect, args.strength, args.verbose)
 
 if __name__ == "__main__":
     main()
