@@ -14,7 +14,7 @@ from overlay import (
 )
 
 from typing import Callable, Dict, Tuple, Iterator
-import os
+from pathlib import Path
 import cv2
 import numpy as np
 
@@ -28,11 +28,11 @@ FILTERS: Dict[str, Callable[[Image.Image, float], Image.Image]] = {
 
 # Define overlay paths
 OVERLAYS = {
-    "rain": r"Scripts\image_manipulation\overlay_images\rain.png",
-    "fog": r"Scripts\image_manipulation\overlay_images\fog.png",
-    "graffiti": r"Scripts\image_manipulation\overlay_images\graffiti.png",
-    "lens-flare": r"Scripts\image_manipulation\overlay_images\lens_flare.png",
-    "wet-filter": r"Scripts\image_manipulation\overlay_images\wet_filter.png"
+    "rain": Path("Scripts/image_manipulation/overlay_images/rain.png"),
+    "fog": Path("Scripts/image_manipulation/overlay_images/fog.png"),
+    "graffiti": Path("Scripts/image_manipulation/overlay_images/graffiti.png"),
+    "lens-flare": Path("Scripts/image_manipulation/overlay_images/lens_flare.png"),
+    "wet-filter": Path("Scripts/image_manipulation/overlay_images/wet_filter.png")
 }
 
 IMAGE_EXTENSIONS: Tuple[str, ...] = (
@@ -43,7 +43,6 @@ IMAGE_EXTENSIONS: Tuple[str, ...] = (
 VIDEO_EXTENSIONS: Tuple[str, ...] = (
     '.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv'
 )
-
 
 def parse_arguments() -> argparse.Namespace:
     """Parses command-line arguments for applying filters to an image.
@@ -68,23 +67,20 @@ def parse_arguments() -> argparse.Namespace:
     )
     return parser.parse_args()  
 
-
-def directory_iterator(directory: str) -> Iterator[Tuple[str, str]]:
+def directory_iterator(directory: Path) -> Iterator[Path]:
     """Creates an iterator that yields valid files from a directory and its subdirectories.
     
     Args:
         directory: The directory path to iterate over.
 
     Yields:
-        Tuples of (directory_path, file_name) for valid files.
+        Paths to valid files.
     """
-    for root, _, files in os.walk(directory):
-        for file in files:
-            if file.lower().endswith(IMAGE_EXTENSIONS + VIDEO_EXTENSIONS):
-                yield (root, file)
+    for path in directory.rglob('*'):
+        if path.suffix.lower() in IMAGE_EXTENSIONS + VIDEO_EXTENSIONS:
+            yield path
 
-
-def process_image(file_path: str, effect_name: str, strength: float) -> None:
+def process_image(file_path: Path, effect_name: str, strength: float) -> None:
     """Applies the given effect to an image and saves it in a folder called "Output".
     
     Args:
@@ -92,25 +88,21 @@ def process_image(file_path: str, effect_name: str, strength: float) -> None:
         effect_name: Name of the effect to apply.
         strength: Strength of the filter effect.
     """
-    output_path = f"Output/{effect_name}_{os.path.basename(file_path)}"
+    output_dir = Path("Output")
+    output_dir.mkdir(exist_ok=True)  # Create output directory if it doesn't exist
+    output_path = output_dir / f"{effect_name}_{file_path.name}"
+
+    image: Image.Image = Image.open(file_path)
 
     if effect_name in FILTERS:
-        image: Image.Image = Image.open(file_path)
-        filter_func: Callable[[Image.Image, float], Image.Image] = FILTERS.get(effect_name)
-        if not filter_func:
-            raise ValueError(f"Unknown filter: {filter_name}")
-
+        filter_func: Callable[[Image.Image, float], Image.Image] = FILTERS[effect_name]
         image = filter_func(image, strength)
-    
-        image.save(output_path)
-    
     elif effect_name in OVERLAYS:
-        image: Image.Image = Image.open(file_path)
-        image: Image.Image = process_image_overlay(image, effect_name, OVERLAYS[effect_name])
-        
+        image = process_image_overlay(image, effect_name, OVERLAYS[effect_name])
+    
     image.save(output_path)
 
-def process_video(file_path: str, effect_name: str, strength: float) -> None:
+def process_video(file_path: Path, effect_name: str, strength: float) -> None:
     """Applies the given effect to a video and saves it in a folder called 'Output'.
 
     Args:
@@ -118,7 +110,7 @@ def process_video(file_path: str, effect_name: str, strength: float) -> None:
         effect_name: Name of the effect to apply.
         strength: Strength of the filter effect.
     """
-    cap = cv2.VideoCapture(file_path)
+    cap = cv2.VideoCapture(str(file_path))
     if not cap.isOpened():
         print(f"Error opening video file {file_path}")
         return
@@ -127,12 +119,13 @@ def process_video(file_path: str, effect_name: str, strength: float) -> None:
     width: int = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height: int = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-    # Create VideoWriter object
-    output_path: str = f"Output/{effect_name}_{os.path.basename(file_path)}"
-    fourcc: int = cv2.VideoWriter_fourcc(*'mp4v')
-    out: cv2.VideoWriter = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+    output_dir = Path("Output")
+    output_dir.mkdir(exist_ok=True)  # Create output directory if it doesn't exist
+    output_path = output_dir / f"{effect_name}_{file_path.name}"
 
-    # Get the filter or overlay function
+    fourcc: int = cv2.VideoWriter_fourcc(*'mp4v')
+    out: cv2.VideoWriter = cv2.VideoWriter(str(output_path), fourcc, fps, (width, height))
+
     filter_func = FILTERS.get(effect_name)
     overlay_path = OVERLAYS.get(effect_name)
 
@@ -143,10 +136,8 @@ def process_video(file_path: str, effect_name: str, strength: float) -> None:
         pil_image: Image.Image = Image.fromarray(frame)
 
         if filter_func:
-            # Apply filter
             filtered_image: Image.Image = filter_func(pil_image, strength)
         elif overlay_path:
-            # Apply overlay
             filtered_image: Image.Image = process_image_overlay(pil_image, effect_name, overlay_path)
         else:
             raise ValueError(f"Unknown effect: {effect_name}")
@@ -163,11 +154,10 @@ def process_video(file_path: str, effect_name: str, strength: float) -> None:
 def main() -> None:
     """Main function to parse arguments, apply the selected filter to images or videos, and save the results."""
     args: argparse.Namespace = parse_arguments()
+    input_path = Path(args.input_path)
 
-    for dir_path, file_name in directory_iterator(args.input_path):
-        file_path: str = os.path.join(dir_path, file_name)
-        file_extension: str = os.path.splitext(file_name)[1].lower()
-        print(file_extension)
+    for file_path in directory_iterator(input_path):
+        file_extension = file_path.suffix.lower()
 
         if file_extension in VIDEO_EXTENSIONS:
             process_video(file_path, args.effect, args.strength)
