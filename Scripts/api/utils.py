@@ -4,9 +4,10 @@ import tkinter as tk
 from tkinter import filedialog
 from pathlib import Path
 import os
+import json
 
 
-def ask_save_location(default_filename="result.csv", default_directory="../../Output"):
+def ask_save_location(default_filename, default_directory="../../Output"):
     """
     Prompt the user to select a location to save a file. If no location is selected, return a default path.
 
@@ -59,7 +60,7 @@ def generate_csv_output(data: Dict[str, Any], output_directory: Optional[Path] =
     ]
     
     df: pd.DataFrame = pd.DataFrame(rows)
-    csv_file_path = ask_save_location()
+    csv_file_path = ask_save_location("result.csv")
     df.to_csv(csv_file_path, index=False)
 
 
@@ -77,3 +78,19 @@ def select_file() -> str:
     file_path: str = filedialog.askopenfilename()
 
     return file_path
+
+
+def result_to_dict(content: bytes) -> Dict[str, Any]:
+    """Converts the binary content of a file to a dictionary.
+    
+    """
+    try:
+        content_str = content.decode('utf-8')
+        data_list = [json.loads(line) for line in content_str.splitlines() if line.strip()]
+    except (UnicodeDecodeError, json.JSONDecodeError) as e:
+        print(f"Error decoding or parsing the content: {e}")
+        return {}
+    
+    # Print the data
+    # print(json.dumps(data_list, indent=4))
+    return(data_list)
