@@ -1,82 +1,139 @@
-import sys
 import argparse
-from auth import authenticate
-from request import analyse_image
-from utils import save_to_json, select_file
+import os
+import sys
+from pathlib import Path
+from pprint import pprint
+from typing import Dict, List, Tuple, Callable
+from api_selector import chatgpt_request, gemini_request, claude_request, llama_request
+from common import VALID_EXTENSIONS, PROMPT, set_verbose
+
+LLMS: Dict[str, Callable[[], None]] = {
+    "chatgpt": chatgpt_request,
+    "gemini": gemini_request,
+    "claude": claude_request,
+    "llama": llama_request
+}
+
+def valid_files_dictionary(directory: str) -> Dict[str, List[str]]:
+    """Organises valid files in a directory into a dictionary.
+    
+    Args:
+        directory: Path to the directory to be processed.
+    
+    Returns:
+        A dictionary with directory paths as keys and lists of valid file names as values.
+    """
+    files_dictionary: Dict[str, List[str]] = {}
+    
+    for root, _, files in os.walk(directory):
+        valid_files: List[str] = [file for file in files if file.endswith(VALID_EXTENSIONS)]
+        if valid_files:
+            files_dictionary[root] = valid_files
+    
+    return files_dictionary
+
+ # Code Review NOTE TODO : 
+ # I think it would be better to just recursivly call this function 
+ # ifdir -> go into that path for item in that path, if isfile() add to dict, else recusive call the func.
+ # The proces of the function valid_files_dictionary (above) is similar to if path.isfile()
+ # with little modification we can do this recursively.
+ 
+def generate_processing_dictionary(path_str: str) -> Dict[str, List[str]]:
+    """Generates a dictionary of files to process based on whether the input path is a file or a directory.
+    
+    Args:
+        path_str: The path to the file or directory to be processed.
+    
+    Returns:
+        A dictionary with directory paths as keys and lists of file names as values,
+        or a single file if the path is a file.
+    
+    Raises:
+        SystemExit: If the path is invalid or does not contain valid files.
+    """
+    path: Path = Path(path_str)
+    
+    if path.is_file() and path.suffix in VALID_EXTENSIONS:
+        return {str(path.parent): [path.name]}
+    
+    if path.is_dir():
+        processing_dictionary: Dict[str, List[str]] = valid_files_dictionary(path_str)
+        if not processing_dictionary:
+            print(f"Directory '{path}' does not contain any valid files for processing. Please use {VALID_EXTENSIONS}.", file=sys.stderr)
+            sys.exit(1)
+        return processing_dictionary
+    
+    print(f"'{path_str}' is not a supported file type. Please use {VALID_EXTENSIONS}.", file=sys.stderr)
+    sys.exit(1)
 
 
 def parse_arguments() -> argparse.Namespace:
-    """Parses command-line arguments for api call.
+    """Parses command-line arguments for running the simulation of an LLM model.
     
     Returns:
         Parsed command-line arguments.
     """
-    parser = argparse.ArgumentParser(description="Functions of gpt")
-    parser.add_argument(
-        '-pb', '--process-batch', 
-        type=str, 
-        metavar='<FILE_PATH>',
-        help='upload a batch file path to be processed (batch process takes 24 hrs)'
+    parser: argparse.ArgumentParser = argparse.ArgumentParser(
+        description="Runs a simulation of an LLM model with image or video files, exporting results to a CSV file."
     )
-
     parser.add_argument(
-        '-lb', '--list-batches', 
-        action='store_true', 
-        help='list all batch processes'
-    )
-
-    parser.add_argument(
-        '-cb', '--check-batch', 
+        "llm_model",
         type=str,
-        metavar='<BATCH_ID>',
-        help='check the status of a specific batch ID. use -lb to list all batches'
+        choices=["chatgpt", "gemini", "claude", "llama"],
+        help="Name of the LLM model to process image or video files"
     )
-
-    # NOTE: THis section may be a little complicated if a fine tuned model requires further fine tuning,
-    # this will require the id of the fine tuned model?
     parser.add_argument(
-        '-ft', '--fine-tune', 
-        type=str, 
-        nargs=2,  # Specifies that this option requires exactly two arguments
-        metavar=('<DATASET_PATH>', '[MODEL_NAME]'),  # Optional: specify argument names
-        help='Upload a fine-tune dataset path and specify a model to be processed (Default model: 4o-mini)'
+        "input_path",
+        type=str,
+        help="Path to the input file or directory"
     )
-
     parser.add_argument(
-        '-lft', '--list-fine-tune', 
-        action='store_true', 
-        help='list all fine-tune processes'
+        "prompt",
+        type=str,
+        help="Prompt for the LLM for processing.",
+        default=PROMPT,
+        nargs="?"
     )
-
     parser.add_argument(
-        '-cft', '--check-fine-tune', 
-        type=str, 
-        metavar='<FINE_TUNE_ID>',
-
-        help='check the status of a specific fine-tune ID. use -lft to list all fine tuning'
+        "--verbose",
+        action="store_true",
+        help="Enables verbose output."
     )
-
-    parser.add_argument(
-        '-ai', '--analyse-image', 
-        type=str, 
-        metavar='<IMAGE_PATH>',
-        help='analyse the image from the specified path'
-    )
-    return parser.parse_args()  
+    return parser.parse_args()
 
 
 def main() -> None:
-    "Main function to parse arguments, set up client, analyse the image and save as a json"
-    args = parse_arguments()
-    
-    key_file = select_file()
-    client = authenticate(key_file)
+    """Main function to parse arguments, validate paths, generate processing dictionaries, and run the selected LLM model."""
+    args: argparse.Namespace = parse_arguments()
 
-    if args.analyse_image:
-        result = analyse_image(client, args.analyse_image)
-        print(result)
-        # TODO: instead of save as a json, give json to export_to_csv
-        # save_to_json(result)
+    if not os.path.exists(args.input_path):
+        print(f"'{args.input_path}' is not a valid image or video path.", file=sys.stderr)
+        sys.exit(1)
+        
+        
+    processing_dictionary: Dict[str, List[str]] = generate_processing_dictionary(args.input_path)
+
+    if args.verbose:
+        set_verbose(True)
+        print(f"----------------------------------------")
+        print(f"Verbose mode enabled")
+        print(f"LLM model: {args.llm_model}")
+        print(f"Input path: {args.input_path}")
+        print(f"Prompt: {args.prompt}")
+        print(f"----------------------------------------")
+        print(f"Processing Dictionary: ")
+        pprint(processing_dictionary)
+
+    if args.llm_model not in LLMS:
+        print(f"'{args.llm_model}' is not a valid model.", file=sys.stderr)
+        sys.exit(1)
+        
+
+    # TODO: Process media in the chosen LLM and return JSON output  (Project requirement 5)
+    LLMS[args.llm_model](processing_dictionary)
+
+    # TODO: Process to spreadsheet                                  (Project requirement 6)
+    
 
 
 if __name__ == "__main__":

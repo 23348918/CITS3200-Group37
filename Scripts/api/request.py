@@ -1,19 +1,7 @@
 import base64
 from typing import Dict, Optional
 from pydantic import BaseModel
-from openai import OpenAI
-
-PROMPT : str = (
-    "You are a road safety visual assistant installed in a car. Your task is to analyze images of road scenes and provide recommendations for safe driving. "
-    "The user will provide you with an image or images to analyze."
-    "For each image or sub-image, use the template format to explain the following in least words:\n\n"
-    "1. Description: Describe what the car is currently doing. Then, describe the objects in the scene in few words, if any, focus on safety hazards, "
-    "road signs, traffic lights, road lines/marks, pedestrians, obstacles. \n"
-    "2. Recommended Action: In few words, give suggestion as to what action should be taken by the driver. "
-    "Also include if driver can change lane, overtake or turn left/right.\n"
-    "3. Reason: Explain in few words the reason for recommended action.\n\n"
-)
-
+import common
 
 def encode_image(image_path: str) -> str:
     """Encodes an image stored locally into a base64 string before being analysed.
@@ -29,7 +17,7 @@ def encode_image(image_path: str) -> str:
     return encoded_image
 
 
-def analyse_image(client: OpenAI, file_path: str, model: Optional[str] = "gpt-4o-mini") -> Dict[str, str]:
+def analyse_image(file_path: str, model: Optional[str] = "gpt-4o-mini") -> Dict[str, str]:
     """Analyses an image using the specified model and returns the response.
 
     Args:
@@ -45,12 +33,12 @@ def analyse_image(client: OpenAI, file_path: str, model: Optional[str] = "gpt-4o
         action: str
 
     image_path: str = encode_image(file_path)
-    response: Dict[str, str] = client.beta.chat.completions.parse(
+    response: Dict[str, str] = common.client.beta.chat.completions.parse(
         model=model,
         messages=[
             {
                 "role": "system",
-                "content": PROMPT
+                "content": common.PROMPT
             },
             {
                 "role": "user",
@@ -70,4 +58,7 @@ def analyse_image(client: OpenAI, file_path: str, model: Optional[str] = "gpt-4o
         ],
         response_format=AnalysisResponse,
     )
-    return response
+
+    # Convert to dict then json string
+    response_dict = response.dict()  # Convert the pydantic model to a dictionary
+    return response_dict

@@ -166,3 +166,5 @@ cython_debug/
 test_output.png
 
 /Private
+/Output/*
+output.csv
