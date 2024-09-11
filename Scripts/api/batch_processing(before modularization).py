@@ -143,7 +143,7 @@ def check_batch_process(client: OpenAI, batch_id: str) -> OpenAI:
 
 
 #TODO: Instead of saving to json, extract data and save to csv
-def export_batch_result (client: OpenAI, batch_id: str) -> None:
+def export_batch_result (client: OpenAI, batch_id: str, out_path: str) -> None:
     """Saves the results of a batch to a JSON file.
 
     Args:
@@ -153,19 +153,14 @@ def export_batch_result (client: OpenAI, batch_id: str) -> None:
     
     batch_results = client.batches.retrieve(batch_id)
 
-    file_ID = client.files.content(batch_results.output_file_id)
-    
-    result = file_ID.read()  # Use read() to get the content as bytes
-    
+    result = client.files.content(batch_results.output_file_id).read()    
     dict_response = result_to_dict(result) # filter out the resp
     
     # NOTE: Need to change this to save to CSV instead of JSON Before calling this, convert dict to csv
-    location = ask_save_location("batchResult.json") # Change the suffix to .csv
 
-    with open(location, 'w') as outfile:
+    with open(out_path, 'w') as outfile:
         json.dump(dict_response, outfile, indent=4)
-    
-    print(f"Batch results saved to {location}")
+    print(f"Batch results saved to {out_path}")
     
 # ------------------- main--------------main--------------------main-------main-------
 args: argparse.Namespace = parse_arguments()
@@ -184,6 +179,7 @@ if args.check_batch:
     batch_status: OpenAI = check_batch_process(client, args.check_batch)
     print(f"Batch ID {args.check_batch} status: \t {batch_status}")
 if args.export_batch:
-    batch_results: OpenAI = export_batch_result(client, args.export_batch)
+    location = ask_save_location("batchResult.json") # Change the suffix to .csv
+    batch_results: OpenAI = export_batch_result(client, args.export_batch, location)
 
 
