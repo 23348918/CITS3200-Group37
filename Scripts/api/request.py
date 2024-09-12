@@ -3,6 +3,12 @@ from typing import Dict, Optional
 from pydantic import BaseModel
 import common
 
+class BatchContentRessponse(BaseModel):
+    description: str
+    reasoning: str
+    action: str
+
+
 def encode_image(image_path: str) -> str:
     """Encodes an image stored locally into a base64 string before being analysed.
 
