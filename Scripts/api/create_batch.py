@@ -1,12 +1,3 @@
-# Description: This script generates a batch file for the OpenAI API. 
-# The batch file contains image file paths that are to be analyzed by the API.
-
-# Usage: python3 createBatchFile.py [<dirpath> | <imgpath>]
-# Provide the path to a directory containing images or a single image file as an argument to the script.
-# If no argument is provided, the user is prompted to select a directory containing images.
-# The user is prompted again to select a location to save the batch file.
-
-
 import json
 import os
 import base64
@@ -16,16 +7,11 @@ from tkinter import filedialog
 from typing import Optional
 from typing import List
 
-PROMPT : str = (
-    "You are a road safety visual assistant installed in a car. Your task is to analyze images of road scenes and provide recommendations for safe driving. "
-    "The user will provide you with an image or images to analyze."
-    "For each image or sub-image, use the template format to explain the following in least words:\n\n"
-    "1. Description: Describe what the car is currently doing. Then, describe the objects in the scene in few words, if any, focus on safety hazards, "
-    "road signs, traffic lights, road lines/marks, pedestrians, obstacles. \n"
-    "2. Recommended Action: In few words, give suggestion as to what action should be taken by the driver. "
-    "Also include if driver can change lane, overtake or turn left/right.\n"
-    "3. Reason: Explain in few words the reason for recommended action.\n\n"
-)
+#TODO: Remove unnessessary overhead
+import common
+
+# Description: This script generates a batch file for the OpenAI API. 
+# The batch file contains image file paths that are to be analyzed by the API.
 
 
 def get_directory(action_name: str) -> Optional[str]:
@@ -96,7 +82,7 @@ def encode_image(image_path):
         res = base64.b64encode(image_file.read()).decode('utf-8')
     return res
 
-def createEntry(filepath):
+def create_entry(filepath):
     """
     Creates an entry for a batch file.
 
@@ -117,7 +103,7 @@ def createEntry(filepath):
             "messages": [
                 {
                     "role": "system",
-                    "content": PROMPT,
+                    "content": common.PROMPT,
                 },
                 {
                     "role": "user",
@@ -173,7 +159,7 @@ def generate_batch_file(filePaths: List[str], outfile: str) -> None:
     """
     with open(outfile, "w") as file: 
         for item in filePaths:
-            entry = createEntry(item)
+            entry = create_entry(item)
             json.dump(entry, file)
             file.write("\n")
 
@@ -182,25 +168,6 @@ def generate_batch_file(filePaths: List[str], outfile: str) -> None:
     else:
         print("File was not created.")
         sys.exit(1)
-
-
-# # ~~~~~~~~~~~~~~~~ Main ~~~~~~~~~~~~~~~~~~~~~~~ Main ~~~~~~~~~~~~~~~~~~~~ Main ~~~~~~~~~~~~
-# if len(sys.argv) >1:
-#     if not os.path.exists(sys.argv[1]):
-#         print(f"'{sys.argv[1]}' is not a valid path. Ensure full path is entered")
-#         sys.exit(1)
-#     dirpath = get_file_paths(sys.argv[1])
-# elif len(sys.argv) == 1:
-#     dirpath = get_directory("Select a directory containing images")
-#     if not dirpath:
-#         print("Usage: python3 createBatchFile.py [<dirpath> | <imgpath>]")
-#         sys.exit(1)
-# else:
-#     print("Usage: python3 createBatchFile.py [<dirpath> | <imgpath>]")
-#     print("Use quotes for file names with spaces.")
-#     sys.exit(1)
-# outpath = ask_save_location()
-# generate_batch_file(dirpath, outpath)
 
 
     

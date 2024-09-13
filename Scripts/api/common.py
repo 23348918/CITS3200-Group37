@@ -34,3 +34,7 @@ PROMPT : str = (
 def set_verbose(value: bool) -> None:
     global verbose
     verbose = value
+
+def set_prompt(prompt: str) -> None:
+    global PROMPT
+    PROMPT = prompt
