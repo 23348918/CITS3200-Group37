@@ -163,7 +163,7 @@ def ask_save_location(outputName: str = "batchfile.jsonl") -> str:
         sys.exit(0)
     return file_path
 
-def generateBatchFile(filePaths: List[str], outfile: str) -> None:
+def generate_batch_file(filePaths: List[str], outfile: str) -> None:
     """
     Generate a batch file containing image file paths.
     
@@ -179,29 +179,28 @@ def generateBatchFile(filePaths: List[str], outfile: str) -> None:
 
     if os.path.isfile(outfile):
         print(f"Batch file saved to {outfile}.")
-        sys.exit(0)
     else:
         print("File was not created.")
         sys.exit(1)
 
 
-# ~~~~~~~~~~~~~~~~ Main ~~~~~~~~~~~~~~~~~~~~~~~ Main ~~~~~~~~~~~~~~~~~~~~ Main ~~~~~~~~~~~~
-if len(sys.argv) >1:
-    if not os.path.exists(sys.argv[1]):
-        print(f"'{sys.argv[1]}' is not a valid path. Ensure full path is entered")
-        sys.exit(1)
-    dirpath = get_file_paths(sys.argv[1])
-elif len(sys.argv) == 1:
-    dirpath = get_directory("Select a directory containing images")
-    if not dirpath:
-        print("Usage: python3 createBatchFile.py [<dirpath> | <imgpath>]")
-        sys.exit(1)
-else:
-    print("Usage: python3 createBatchFile.py [<dirpath> | <imgpath>]")
-    print("Use quotes for file names with spaces.")
-    sys.exit(1)
-outpath = ask_save_location()
-generateBatchFile(dirpath, outpath)
+# # ~~~~~~~~~~~~~~~~ Main ~~~~~~~~~~~~~~~~~~~~~~~ Main ~~~~~~~~~~~~~~~~~~~~ Main ~~~~~~~~~~~~
+# if len(sys.argv) >1:
+#     if not os.path.exists(sys.argv[1]):
+#         print(f"'{sys.argv[1]}' is not a valid path. Ensure full path is entered")
+#         sys.exit(1)
+#     dirpath = get_file_paths(sys.argv[1])
+# elif len(sys.argv) == 1:
+#     dirpath = get_directory("Select a directory containing images")
+#     if not dirpath:
+#         print("Usage: python3 createBatchFile.py [<dirpath> | <imgpath>]")
+#         sys.exit(1)
+# else:
+#     print("Usage: python3 createBatchFile.py [<dirpath> | <imgpath>]")
+#     print("Use quotes for file names with spaces.")
+#     sys.exit(1)
+# outpath = ask_save_location()
+# generate_batch_file(dirpath, outpath)
 
 
     

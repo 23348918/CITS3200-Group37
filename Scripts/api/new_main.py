@@ -9,6 +9,7 @@ from pathlib import Path
 from pprint import pprint
 from typing import Dict, List, Tuple, Callable
 from api_selector import chatgpt_request, gemini_request, claude_request, llama_request
+from create_batch import get_file_paths, generate_batch_file
 import common as common
 
 LLMS: Dict[str, Callable[[], None]] = {
@@ -93,10 +94,10 @@ def main() -> None:
     # TODO: Implement video processing functionality here
     if args.process:
 
+        process_path = args.process
+
         if args.verbose:
             print(f"Processing model: {args.llm_model}, input path: {args.process}")
-
-        process_path = args.process
 
         # Check path is valid
         if not os.path.exists(process_path):
@@ -114,7 +115,20 @@ def main() -> None:
 
         # Batch process image or video directory
         elif is_valid_directory(process_path):
-            print("PLACEHOLDER: Batch Processing")
+            if args.verbose:
+                print(f"Creating batch process for input path: {args.process}")
+
+
+            dirpath = get_file_paths(process_path)
+
+            outpath = ask_save_location("batchfile.jsonl")
+            generate_batch_file(dirpath, outpath)
+
+            upload_batch = upload_batch_file(common.chatgpt_client, outpath)
+            batch_object = create_batch_file(common.chatgpt_client, upload_batch)
+            print(f"Batch created with ID: {batch_object.id}")
+            
+
         # Invalid file type
         else:
             print(f"The path {process_path} is not a valid file, directory or zip file.")
@@ -161,9 +175,6 @@ def main() -> None:
 
         # TODO: Instead of exporting go straight to csv (DO WE STORE THE RESULT??)
         export_batch_result(common.chatgpt_client, args.export, location)
-
-    # TODO: Process media in the chosen LLM and return JSON output, export to excel  (Project requirement 5 & 6)
-    # LLMS[args.llm_model](processing_dictionary)
 
 if __name__ == "__main__":
     main()
