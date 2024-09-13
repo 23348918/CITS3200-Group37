@@ -39,7 +39,7 @@ def analyse_image(file_path: str, model: Optional[str] = "gpt-4o-mini") -> Dict[
         action: str
 
     image_path: str = encode_image(file_path)
-    response: Dict[str, str] = common.client.beta.chat.completions.parse(
+    response: Dict[str, str] = common.chatgpt_client.beta.chat.completions.parse(
         model=model,
         messages=[
             {

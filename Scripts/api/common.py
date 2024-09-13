@@ -3,7 +3,9 @@ from typing import Tuple
 
 
 # Global Variables
-client: OpenAI = None
+chatgpt_client: OpenAI = None
+gemini_client = None
+claude_client = None
 verbose: bool = False
 
 # Constants
