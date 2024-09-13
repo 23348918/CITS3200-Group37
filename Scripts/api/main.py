@@ -3,10 +3,9 @@ import os
 import sys
 from auth import authenticate
 from gpt_batch_operations import upload_batch_file, create_batch_file, list_batches, check_batch_process, export_batch_result
-from utils import ask_save_location
+from utils import ask_save_location, get_save_path
 from openai import OpenAI
 from pathlib import Path
-from pprint import pprint
 from typing import Dict, List, Tuple, Callable
 from api_selector import chatgpt_request, gemini_request, claude_request, llama_request
 from create_batch import get_file_paths, generate_batch_file
@@ -101,7 +100,7 @@ def main() -> None:
     # TODO: Implement video processing functionality here
     if args.process:
 
-        process_path: str = args.process
+        process_path: Path = Path(args.process)
 
         # If custom prompt is used set prompt
         if args.prompt:
@@ -134,27 +133,27 @@ def main() -> None:
 
             dirpath: List[str] = get_file_paths(process_path)
 
-            outpath: str = ask_save_location("batchfile.jsonl")
+            print(dirpath)
+
+            filename = process_path.stem
+            directory: Path = Path("../../Batch_Files")
+
+            # Get the file path
+            outpath = get_save_path(filename, directory)
+
+            if args.verbose:
+                print(f"File saved to Batch_Files as: {filename}.json")
+
             generate_batch_file(dirpath, outpath)
 
             upload_batch = upload_batch_file(common.chatgpt_client, outpath)
             batch_object = create_batch_file(common.chatgpt_client, upload_batch)
             print(f"Batch created with ID: {batch_object.id}")
             
-
         # Invalid file type
         else:
             print(f"The path {process_path} is not a valid file, directory or zip file.")
             sys.exit(1)
-        
-
-        # If a valid image, we process via normal route, else we batch process.
-
-        # if batch:
-        #     upload_batch = upload_batch_file(chatgpt_client, args.process_batch)
-        #     batch_object = create_batch_file(chatgpt_client, upload_batch)
-        #     print(f"Batch created with ID: {batch_object.id}")
-
 
     # Case 2: User would like to list out all batches processing or processed.
     elif args.list:
@@ -182,8 +181,12 @@ def main() -> None:
     elif args.export:
         if args.verbose:
             print(f"Exporting batch {args.export} for model: {args.llm_model}")
-        
-        location = ask_save_location("batchResult.json")
+          
+        filename: str = args.export
+        directory: Path = Path("../../Output")
+
+        # Get the file path
+        location = get_save_path(filename, directory)
         print(location)
 
         # TODO: Instead of exporting go straight to csv (DO WE STORE THE RESULT??)

@@ -163,9 +163,7 @@ def generate_batch_file(filePaths: List[str], outfile: str) -> None:
             json.dump(entry, file)
             file.write("\n")
 
-    if os.path.isfile(outfile):
-        print(f"Batch file saved to {outfile}.")
-    else:
+    if not os.path.isfile(outfile):
         print("File was not created.")
         sys.exit(1)
 
