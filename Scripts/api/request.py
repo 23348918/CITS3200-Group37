@@ -33,9 +33,9 @@ def encode_video(video_path: str) -> list[str]:
         The base64-encoded list of image strings.
     """
     images: list[str] = []
-    cam = cv2.VideoCapture(video_path)
+    cam: cv2.VideoCapture = cv2.VideoCapture(video_path)
     captureOnFrames: int = int(cam.get(cv2.CAP_PROP_FPS) / 2) # Gives the spacing between each four frames
-    count = 0
+    count: int = 0
     while True:
         success,frame = cam.read()
         count += 1
