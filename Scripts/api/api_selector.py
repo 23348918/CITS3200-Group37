@@ -1,16 +1,24 @@
 from auth import authenticate
 from request import analyse_image, analyse_video
 from typing import Dict, List
+from pathlib import Path
+from gpt_request import analyse_image
 import common as common
 from utils import generate_csv_output
 
-def chatgpt_request(processing_directory: Dict[str, List[str]]) -> None:
-    # TODO: Currently only works for 1 image, allow for working with multiple and subdirectories
-    # Authenticate the key to ensure it can be used
-    common.client = authenticate("../../Private/ClientKeys/chatgpt-api.txt")
 
-    # Process each media in processing dictionary into a separate CSV file for each
-    for key in processing_directory:
+def chatgpt_request(process_path: Path) -> None:
+    """
+    Process a request to the chatgpt API
+
+    Args:
+        process_path: location of media to be processed by LLM
+    """
+    # TODO: Currently only works for 1 image, allow for working with multiple and subdirectories
+
+    # Process media
+    if common.verbose:
+        print(f"Sending {process_path} to chatgpt-4o-mini...")
 
         # NOTE : change the path_string to use / instead of \ as mac and linux only takes /
         for file in processing_directory[key]:
@@ -33,16 +41,34 @@ def chatgpt_request(processing_directory: Dict[str, List[str]]) -> None:
     pass
 
 
-def gemini_request(processing_directory: Dict[str, List[str]]) -> None:
+def gemini_request(process_path: Path) -> None:
+    """
+    Process a request to the gemini API
+
+    Args:
+        process_path: location of media to be processed by LLM
+    """
     print("DONE")
     pass
 
 
-def claude_request(processing_directory: Dict[str, List[str]]) -> None:
+def claude_request(process_path: Path) -> None:
+    """
+    Process a request to the claude API
+
+    Args:
+        process_path: location of media to be processed by LLM
+    """
     print("DONE")
     pass
 
 
-def llama_request(processing_directory: Dict[str, List[str]]) -> None:
+def llama_request(process_path: Path) -> None:
+    """
+    Process a request to the llama API
+
+    Args:
+        process_path: location of media to be processed by LLM
+    """
     print("DONE")
     pass

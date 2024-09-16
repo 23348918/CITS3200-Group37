@@ -4,11 +4,11 @@ from pydantic import BaseModel
 import common
 import cv2
 
+
 class BatchContentRessponse(BaseModel):
     description: str
     reasoning: str
     action: str
-
 
 def encode_image(image_path: str) -> str:
     """Encodes an image stored locally into a base64 string before being analysed.
@@ -65,7 +65,7 @@ def analyse_image(file_path: str, model: Optional[str] = "gpt-4o-mini") -> Dict[
         action: str
 
     image_path: str = encode_image(file_path)
-    response: Dict[str, str] = common.client.beta.chat.completions.parse(
+    response: Dict[str, str] = common.chatgpt_client.beta.chat.completions.parse(
         model=model,
         messages=[
             {

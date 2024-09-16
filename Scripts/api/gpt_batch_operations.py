@@ -2,6 +2,7 @@ from openai import OpenAI
 from utils import result_to_dict, save_batch_results_to_file
 import openai
 
+
 def upload_batch_file(client: OpenAI, file_path: str) -> OpenAI:
     """
     Uploads a JSONL file to be processed as a batch.
