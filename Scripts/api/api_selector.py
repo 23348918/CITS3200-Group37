@@ -1,5 +1,5 @@
 from auth import authenticate
-from request import analyse_image
+from request import analyse_image, analyse_video
 from typing import Dict, List
 import common as common
 from utils import generate_csv_output
@@ -18,7 +18,10 @@ def chatgpt_request(processing_directory: Dict[str, List[str]]) -> None:
             
             if common.verbose:
                 print(f"Sending {path_str} to chatgpt-4o-mini...")
-            result_dict: Dict[str, str] = analyse_image(path_str)
+            if file.endswith(common.VIDEO_EXTENSIONS):
+                result_dict: Dict[str, str] = analyse_video(path_str)
+            else:
+                result_dict: Dict[str, str] = analyse_image(path_str)
             if common.verbose:
                 print(f"Received result from chatgpt-4o-mini: {result_dict}")
 

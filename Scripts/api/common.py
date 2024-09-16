@@ -13,9 +13,13 @@ VALID_EXTENSIONS: Tuple[str, ...] = (
     '.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv'
 )
 
+VIDEO_EXTENSIONS: Tuple[str, ...] = (
+    '.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv'
+)
+
 PROMPT : str = (
     "You are a road safety visual assistant installed in a car. Your task is to analyze images of road scenes and provide recommendations for safe driving. "
-    "The user will provide you with an image or images to analyze."
+    "The user will provide you with an image or series of images to analyze."
     "For each image or sub-image, use the template format to explain the following in least words:\n\n"
     "1. Description: Describe what the car is currently doing. Then, describe the objects in the scene in few words, if any, focus on safety hazards, "
     "road signs, traffic lights, road lines/marks, pedestrians, obstacles. \n"
