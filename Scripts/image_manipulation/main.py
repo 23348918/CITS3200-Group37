@@ -81,11 +81,17 @@ def directory_iterator(directory: Path, verbose: bool = False) -> Iterator[Path]
     Yields:
         Paths to valid files.
     """
-    for path in directory.rglob('*'):
-        if path.suffix.lower() in IMAGE_EXTENSIONS + VIDEO_EXTENSIONS:
+    if directory.is_file():
+        if directory.suffix.lower() in IMAGE_EXTENSIONS + VIDEO_EXTENSIONS:
             if verbose:
-                print(f"Processing file: {path}")
-            yield path
+                print(f"Processing file: {directory}")
+            yield directory
+    else:
+        for path in directory.rglob('*'):
+            if path.suffix.lower() in IMAGE_EXTENSIONS + VIDEO_EXTENSIONS:
+                if verbose:
+                    print(f"Processing file: {path}")
+                yield path
 
 def process_image(file_path: Path, effect_name: str, strength: float, verbose: bool = False) -> None:
     """Applies the given effect to an image and saves it in a folder called "Output".
