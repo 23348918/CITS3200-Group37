@@ -26,7 +26,7 @@ PROMPT : str = (
     "3. Reason: Explain in few words the reason for recommended action.\n\n"
 )
 
-# TODO: Set up Logging
+# TODO: Set up Logging (track response time, token count, errors etc.)
 
 # TODO: Possibly a config class to allow for batch processing option here instead of CLI
 
@@ -38,3 +38,5 @@ def set_verbose(value: bool) -> None:
 def set_prompt(prompt: str) -> None:
     global PROMPT
     PROMPT = prompt
+    if verbose:
+        print(f"Custom Prompt: {prompt}")
