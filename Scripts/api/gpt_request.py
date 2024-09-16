@@ -135,7 +135,7 @@ def analyse_video(file_path: str, model: Optional[str] = "gpt-4o-mini") -> Dict[
                 }
             }
         )
-    response: Dict[str, str] = common.client.beta.chat.completions.parse(
+    response: Dict[str, str] = common.chatgpt_client.beta.chat.completions.parse(
         model=model,
         messages=model_messages,
         response_format=AnalysisResponse,
