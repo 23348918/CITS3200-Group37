@@ -1,6 +1,6 @@
 from PIL import Image, ImageEnhance, ImageFilter
-import numpy as np
 from typing import Dict, Tuple
+from pathlib import Path
 
 OVERLAY_FUNCTIONS: Dict[str, Tuple[float, int]] = {
     "graffiti": (1.2, 15),
@@ -62,7 +62,7 @@ def process_image_overlay(background: Image.Image, effect_type: str, overlay_pat
     
     return blended.convert("RGB")
 
-def process_video_overlay(background: Image.Image, effect_type: str, overlay_path: str) -> Image.Image:
+def process_video_overlay(background: Image.Image, effect_type: str, overlay_path: Path) -> Image.Image:
     """Adds a specified overlay effect to a video frame using PIL.
 
     Args:

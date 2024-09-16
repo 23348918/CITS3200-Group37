@@ -28,11 +28,11 @@ FILTERS: Dict[str, Callable[[Image.Image, float], Image.Image]] = {
 
 # Define overlay paths
 OVERLAYS = {
-    "rain": Path("Scripts/image_manipulation/overlay_images/rain.png"),
-    "fog": Path("Scripts/image_manipulation/overlay_images/fog.png"),
-    "graffiti": Path("Scripts/image_manipulation/overlay_images/graffiti.png"),
-    "lens-flare": Path("Scripts/image_manipulation/overlay_images/lens_flare.png"),
-    "wet-filter": Path("Scripts/image_manipulation/overlay_images/wet_filter.png")
+    "rain": Path("overlay_images/rain.png"),
+    "fog": Path("overlay_images/fog.png"),
+    "graffiti": Path("overlay_images/graffiti.png"),
+    "lens-flare": Path("overlay_images/lens_flare.png"),
+    "wet-filter": Path("overlay_images/wet_filter.png")
 }
 
 IMAGE_EXTENSIONS: Tuple[str, ...] = (
@@ -186,7 +186,10 @@ def main() -> None:
     """Main function to parse arguments, apply the selected filter to images or videos, and save the results."""
     args: argparse.Namespace = parse_arguments()
     input_path = Path(args.input_path)
-
+    if not input_path.is_absolute():
+        print("Please provide full path to the input.")
+        exit(1)
+    
     for file_path in directory_iterator(input_path, args.verbose):
         file_extension = file_path.suffix.lower()
 
