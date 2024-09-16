@@ -148,8 +148,12 @@ def process_video(file_path: Path, effect_name: str, strength: float, verbose: b
     fourcc: int = cv2.VideoWriter_fourcc(*'mp4v')
     out: cv2.VideoWriter = cv2.VideoWriter(str(output_path), fourcc, fps, (width, height))
 
-    if verbose:
-        print(f"Applying {effect_name} effect to video {file_path} with strength {strength}")
+    if effect_name in FILTERS:
+        if verbose:
+            print(f"Applying {effect_name} effect to video {file_path} with strength {strength}")
+    elif effect_name in OVERLAYS:
+        if verbose:
+            print(f"Applying {effect_name} effect to video {file_path}")
 
     filter_func = FILTERS.get(effect_name)
     overlay_path = OVERLAYS.get(effect_name)
