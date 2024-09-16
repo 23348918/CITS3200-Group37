@@ -167,7 +167,7 @@ def process_video(file_path: Path, effect_name: str, strength: float, verbose: b
         if filter_func:
             filtered_image: Image.Image = filter_func(pil_image, strength)
         elif overlay_path:
-            filtered_image: Image.Image = process_image_overlay(pil_image, effect_name, overlay_path)
+            filtered_image: Image.Image = process_video_overlay(pil_image, effect_name, overlay_path)
         else:
             raise ValueError(f"Unknown effect: {effect_name}")
 
