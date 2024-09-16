@@ -3,7 +3,9 @@ from typing import Tuple
 
 
 # Global Variables
-client: OpenAI = None
+chatgpt_client: OpenAI = None
+gemini_client = None
+claude_client = None
 verbose: bool = False
 
 # Constants
@@ -28,7 +30,7 @@ PROMPT : str = (
     "3. Reason: Explain in few words the reason for recommended action.\n\n"
 )
 
-# TODO: Set up Logging
+# TODO: Set up Logging (track response time, token count, errors etc.)
 
 # TODO: Possibly a config class to allow for batch processing option here instead of CLI
 
@@ -36,3 +38,9 @@ PROMPT : str = (
 def set_verbose(value: bool) -> None:
     global verbose
     verbose = value
+
+def set_prompt(prompt: str) -> None:
+    global PROMPT
+    PROMPT = prompt
+    if verbose:
+        print(f"Custom Prompt: {prompt}")

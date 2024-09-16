@@ -9,7 +9,7 @@ from openai import OpenAI
 import sys
 
 
-def ask_save_location(default_filename):
+def ask_save_location(default_filename: str) -> str:
     """
     Prompt the user to select a location to save a file. If no location is selected, return a default path.
 
@@ -40,6 +40,26 @@ def ask_save_location(default_filename):
     if not file_path:
         print("Cancelled. Exiting.")
         sys.exit(0)
+    return file_path
+
+def get_save_path(filename: str, directory: Path):
+    """
+    Generates a file path in a fixed directory with a specified filename.
+
+    Args:
+        default_filename (str): The default filename to use.
+        fixed_directory (str): The fixed directory to save the file in.
+
+    Returns:
+        Path: The Path object representing the file path.
+    """
+    # Define the fixed directory and ensure it exists
+    dir = Path(directory)
+    dir.mkdir(parents=True, exist_ok=True)
+    
+    # Define the full path with the filename
+    file_path = dir / f"{filename}.jsonl"
+    
     return file_path
 
 def generate_csv_output(data: Dict[str, Any], output_directory: Optional[Path] = None) -> None:
@@ -79,7 +99,6 @@ def select_file() -> str:
 
     return file_path
 
-# for converting the binary content of a file to a dictionary. used in 
 def result_to_dict(content: bytes) -> Dict[str, Any]:
 
     """
@@ -102,8 +121,6 @@ def result_to_dict(content: bytes) -> Dict[str, Any]:
         print(f"Error decoding or parsing the content: {e}")
         return {}
     
-    # Print the data
-    # print(json.dumps(data_list, indent=4))
     return(data_list)
 
 
