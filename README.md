@@ -16,13 +16,13 @@ This document provides a brief overview of how to use the `main.py` script for v
 
 **Command:**
 
-``bash
-python3 main.py model -process path prompt --verbose
+```bash
+python3 main.py model -process [path] -prompt [prompt] --verbose
 ```
 
 - model: Specifies the model type (i.e. ChatGPT).
 - -process path: Indicates that you want to process the model at the given path.
-- prompt: custom prompt for the given model, else a default case is used
+- -prompt prompt: custom prompt for the given model, else a default case is used
 - --verbose: Enables verbose output for more detailed logs.
 
 ### Use Case 2: List Batches

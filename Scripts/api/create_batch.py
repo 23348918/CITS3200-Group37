@@ -6,12 +6,7 @@ import tkinter as tk
 from tkinter import filedialog
 from typing import Optional
 from typing import List
-
-#TODO: Remove unnessessary overhead
 import common
-
-# Description: This script generates a batch file for the OpenAI API. 
-# The batch file contains image file paths that are to be analyzed by the API.
 
 
 def get_directory(action_name: str) -> Optional[str]:

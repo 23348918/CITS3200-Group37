@@ -99,7 +99,6 @@ def select_file() -> str:
 
     return file_path
 
-# for converting the binary content of a file to a dictionary. used in 
 def result_to_dict(content: bytes) -> Dict[str, Any]:
 
     """
@@ -122,8 +121,6 @@ def result_to_dict(content: bytes) -> Dict[str, Any]:
         print(f"Error decoding or parsing the content: {e}")
         return {}
     
-    # Print the data
-    # print(json.dumps(data_list, indent=4))
     return(data_list)
 
 
