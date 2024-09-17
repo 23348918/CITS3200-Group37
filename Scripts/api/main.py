@@ -1,83 +1,235 @@
-import sys
 import argparse
+import os
+import sys
 from auth import authenticate
-from request import analyse_image
-from utils import save_to_json, select_file
+from gpt_batch_operations import upload_batch_file, create_batch_file, list_batches, check_batch_process, export_batch_result
+from utils import get_save_path
+from pathlib import Path
+from typing import Dict, List, Callable
+from api_selector import chatgpt_request, gemini_request, claude_request, llama_request
+from create_batch import get_file_paths, generate_batch_file
+import common as common
 
+LLMS: Dict[str, Callable[[], None]] = {
+    "chatgpt": chatgpt_request,
+    "gemini": gemini_request,
+    "claude": claude_request,
+    "llama": llama_request
+}
 
-def parse_arguments() -> argparse.Namespace:
-    """Parses command-line arguments for api call.
-    
+def is_valid_file(file_path: Path, valid_extensions: list) -> bool:
+    """Check if the file has a valid extension.
+
+    Args:
+        file_path: Path to the input media
+        valid_extensions: list of valid extensions
+
     Returns:
-        Parsed command-line arguments.
+        Boolean giving file validity.
     """
-    parser = argparse.ArgumentParser(description="Functions of gpt")
-    parser.add_argument(
-        '-pb', '--process-batch', 
-        type=str, 
-        metavar='<FILE_PATH>',
-        help='upload a batch file path to be processed (batch process takes 24 hrs)'
+    # return os.path.isfile(file_path) and file_path.lower().endswith(tuple(valid_extensions))
+    valid_extensions = tuple(valid_extensions)
+    return file_path.is_file() and file_path.suffix.lower() in valid_extensions
+
+def is_valid_directory(dir_path: str) -> bool:
+    """Check if the given path is a valid directory.
+
+    Args:
+        dir_path: Path to the input media directory.
+
+    Returns:
+        Boolean value for valid directory.
+    """
+    return os.path.isdir(dir_path)
+
+def batch_process(process_path: Path) -> None:
+    """Process a given directory and save as a batch file to send to LLM.
+
+    Args:
+        process_path: Path for the directory to be processed.
+    """
+    if common.verbose:
+        print(f"Creating batch process for input path: {process_path}")
+        
+    dirpath: List[str] = get_file_paths(process_path)
+    filename = process_path.stem
+    directory: Path = Path("../../Batch_Files")
+
+    # Get the file path
+    outpath = get_save_path(filename, directory)
+
+    if common.verbose:
+        print(f"File saved to Batch_Files as: {filename}.json")
+
+    generate_batch_file(dirpath, outpath)
+
+    upload_batch = upload_batch_file(common.chatgpt_client, outpath)
+    batch_object = create_batch_file(common.chatgpt_client, upload_batch)
+    print(f"Batch created with ID: {batch_object.id}")
+
+def process(process_path: str, llm_model: str) -> None:
+    """Process the given path as a singular or batch request
+    
+    Args:
+        process_path: Path of file or directory to be processed by LLM
+        llm_model: Chosen LLM model
+    """
+    if not os.path.exists(process_path):
+            print(f"Cannot find path: '{process_path}'", file=sys.stderr)
+            sys.exit(1)
+    if llm_model not in LLMS:
+        print(f"'{llm_model}' is not a valid model.", file=sys.stderr)
+        sys.exit(1)
+
+    # Process singular image or video
+    if is_valid_file(process_path, common.VALID_EXTENSIONS):
+        LLMS[llm_model](process_path)
+
+    # Batch process image or video directory
+    elif is_valid_directory(process_path):
+        batch_process(process_path)
+
+    else:
+        print(f"The path {process_path} is not a valid file, directory or zip file.")
+        sys.exit(1)
+
+def batches_list() -> None:
+    """List a history of all batches for every model"""
+
+    if common.verbose:
+        print("Listing all batches.")
+        
+    # Lists all batches for Chatgpt
+    print("Chatgpt:")
+    list_batches(common.chatgpt_client)
+    # TODO: List all batches for Gemini & Claude
+    print("Gemini:")
+
+    print("Claude:")
+
+def check_batch(batch_id: str, llm_model: str) -> None:
+    """Check the batch for the given batch id and llm model
+    
+    Args:
+        batch_id: Batch id to check
+        llm_model: The model the batch is from
+    """
+    if common.verbose:
+        print(f"Checking batch {batch_id} for model: {llm_model}")
+        
+    if llm_model == "chatgpt":
+        status = check_batch_process(common.chatgpt_client, batch_id)
+        print(status)
+
+def export_batch(batch_id: str, llm_model: str) -> None:
+    """Export the batch for the given batch id and llm model
+    
+    Args:
+        batch_id: Batch id to check
+        llm_model: The model the batch is from
+    """
+
+    if common.verbose:
+            print(f"Exporting batch {batch_id} for model: {llm_model}")
+          
+    filename: str = batch_id
+    directory: Path = Path("../../Output")
+    location = get_save_path(filename, directory)
+
+    # TODO: Store to CSV instead
+    export_batch_result(common.chatgpt_client, batch_id, location)
+    
+def parse_arguments() -> argparse.Namespace:
+    """Parse the arguments from the command line
+
+    Returns:
+        Argsparse namespace
+    """
+
+    parser = argparse.ArgumentParser(
+        description="CLI for LLM models processing and batch operations."
     )
 
-    parser.add_argument(
-        '-lb', '--list-batches', 
-        action='store_true', 
-        help='list all batch processes'
+    # Adds exclusivity to handle processing and batch operations
+    group = parser.add_mutually_exclusive_group(required=True)
+
+    # Process operation
+    group.add_argument(
+        "-process",
+        metavar="FILE_PATH",
+        help="Process the input file or directory."
     )
 
+    # Batch operations
+    group.add_argument("-list", action="store_true", help="List all batches.")
+    group.add_argument("-check", metavar="BATCH_ID", help="Check the status of a batch.")
+    group.add_argument("-export", metavar="BATCH_ID", help="Export the results of a batch.")
+
+    # Verbose flag
     parser.add_argument(
-        '-cb', '--check-batch', 
+        "--verbose",
+        action="store_true",
+        help="Enable verbose output."
+    )
+
+    # LLM model (not used for list)
+    parser.add_argument(
+        "llm_model",
         type=str,
-        metavar='<BATCH_ID>',
-        help='check the status of a specific batch ID. use -lb to list all batches'
+        nargs="?",
+        choices=["chatgpt", "gemini", "claude", "llama"],
+        help="Name of the LLM model to process image or video files. Required for process, check, and export."
     )
 
-    # NOTE: THis section may be a little complicated if a fine tuned model requires further fine tuning,
-    # this will require the id of the fine tuned model?
+    # Prompt selector
     parser.add_argument(
-        '-ft', '--fine-tune', 
-        type=str, 
-        nargs=2,  # Specifies that this option requires exactly two arguments
-        metavar=('<DATASET_PATH>', '[MODEL_NAME]'),  # Optional: specify argument names
-        help='Upload a fine-tune dataset path and specify a model to be processed (Default model: 4o-mini)'
+        "--prompt",
+        metavar="PROMPT",
+        help="Prompt selector for the processing mode. Optional for -process."
     )
 
-    parser.add_argument(
-        '-lft', '--list-fine-tune', 
-        action='store_true', 
-        help='list all fine-tune processes'
-    )
+    args = parser.parse_args()
 
-    parser.add_argument(
-        '-cft', '--check-fine-tune', 
-        type=str, 
-        metavar='<FINE_TUNE_ID>',
+    # Ensure llm_model is required if not listing batches
+    if not args.list and args.llm_model is None:
+        parser.error("llm_model is required for processing, checking, or exporting.")
 
-        help='check the status of a specific fine-tune ID. use -lft to list all fine tuning'
-    )
-
-    parser.add_argument(
-        '-ai', '--analyse-image', 
-        type=str, 
-        metavar='<IMAGE_PATH>',
-        help='analyse the image from the specified path'
-    )
-    return parser.parse_args()  
-
+    return args
 
 def main() -> None:
-    "Main function to parse arguments, set up client, analyse the image and save as a json"
-    args = parse_arguments()
+    """Main function to parse arguments, validate paths, run LLM model, list, check and export batch process."""
+    args: argparse.Namespace = parse_arguments()
+
+    # TODO: Authenticate keys for all 3 models, program should run if the desired model key is in place.
+    common.chatgpt_client = authenticate("../../Private/ClientKeys/chatgpt-api.txt")
+
+    if args.verbose:
+        common.set_verbose(True)
+        print("Verbose mode enabled.")
     
-    key_file = select_file()
-    client = authenticate(key_file)
+    # Case 1: User would like to process image or directory
+    # TODO: Implement video processing functionality here
+    if args.process:
+        if args.prompt:
+            common.set_prompt(args.prompt)
+        if args.verbose:
+            print(f"Processing model: {args.llm_model}, input path: {args.process}")
+    
+        process_path: Path = Path(args.process)
+        process(process_path, args.llm_model)
 
-    if args.analyse_image:
-        result = analyse_image(client, args.analyse_image)
-        print(result)
-        # TODO: instead of save as a json, give json to export_to_csv
-        # save_to_json(result)
+    # Case 2: User would like to list out all batches processing or processed.
+    elif args.list:
+        batches_list()
 
+    # Case 3: User would like to check the progress of a given batch_id
+    elif args.check:
+        check_batch(args.check, args.llm_model)
+
+    # Case 4: User would like to export a completed batch
+    elif args.export:
+        export_batch(args.export, args.llm_model)
 
 if __name__ == "__main__":
     main()
+
