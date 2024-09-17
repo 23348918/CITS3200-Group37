@@ -62,22 +62,3 @@ def process_image_overlay(background: Image.Image, effect_type: str, overlay_pat
     
     return blended.convert("RGB")
 
-def process_video_overlay(background: Image.Image, effect_type: str, overlay_path: Path) -> Image.Image:
-    """Adds a specified overlay effect to a video frame using PIL.
-
-    Args:
-        background: The background frame as a PIL Image object.
-        effect_type: The type of effect to apply ('rain', 'fog', 'graffiti', 'lens-flare', 'wet-filter').
-        overlay_path: Path to the overlay image.
-
-    Returns:
-        The processed Image object with the overlay applied.
-    """
-    overlay_image = Image.open(overlay_path).convert("RGBA")
-    overlay_image = overlay_image.resize(background.size, Image.Resampling.LANCZOS)
-    overlay_image = enhance_overlay(overlay_image, effect_type)
-
-    # Blend the overlay and background
-    blended = Image.alpha_composite(background.convert("RGBA"), overlay_image)
-    
-    return blended.convert("RGB")
