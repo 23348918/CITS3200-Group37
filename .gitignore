@@ -166,6 +166,8 @@ cython_debug/
 test_output.png
 
 /Private
+/Scripts/image_manipulation/Output/
 /Output/*
 output.csv
 /Batch_Files
+
