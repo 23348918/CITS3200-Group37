@@ -9,6 +9,7 @@ from typing import Dict, List, Callable
 from api_selector import chatgpt_request, gemini_request, claude_request, llama_request
 from create_batch import get_file_paths, generate_batch_file
 import common as common
+from claude_multi_request import parallel_process, get_file_dict
 
 LLMS: Dict[str, Callable[[], None]] = {
     "chatgpt": chatgpt_request,
@@ -42,7 +43,7 @@ def is_valid_directory(dir_path: str) -> bool:
     """
     return os.path.isdir(dir_path)
 
-def batch_process(process_path: Path) -> None:
+def batch_process(process_path: Path, llm_model: str) -> None:
     """Process a given directory and save as a batch file to send to LLM.
 
     Args:
@@ -51,11 +52,10 @@ def batch_process(process_path: Path) -> None:
     if common.verbose:
         print(f"Creating batch process for input path: {process_path}")
         
-    dirpath: List[str] = get_file_paths(process_path)
+    dirpath: List[Path] = get_file_paths(process_path)
     filename = process_path.stem
     directory: Path = Path("../../Batch_Files")
 
-    # Get the file path
     outpath = get_save_path(filename, directory)
 
     if common.verbose:
@@ -87,8 +87,13 @@ def process(process_path: str, llm_model: str) -> None:
 
     # Batch process image or video directory
     elif is_valid_directory(process_path):
-        batch_process(process_path)
-
+        if llm_model == "chatgpt":
+            batch_process(process_path, llm_model)
+        elif llm_model == "claude":
+            file_dict = get_file_dict(process_path)
+            results = parallel_process(file_dict)
+            for result in results:
+                print(result)
     else:
         print(f"The path {process_path} is not a valid file, directory or zip file.")
         sys.exit(1)
@@ -201,7 +206,10 @@ def main() -> None:
     args: argparse.Namespace = parse_arguments()
 
     # TODO: Authenticate keys for all 3 models, program should run if the desired model key is in place.
-    common.chatgpt_client = authenticate("../../Private/ClientKeys/chatgpt-api.txt")
+    if args.llm_model == "chatgpt":
+        common.chatgpt_client = authenticate("../../Private/ClientKeys/chatgpt-api.txt")
+    elif args.llm_model == "claude":
+        common.claude_client = authenticate("../../Private/ClientKeys/claude-api.txt")
 
     if args.verbose:
         common.set_verbose(True)

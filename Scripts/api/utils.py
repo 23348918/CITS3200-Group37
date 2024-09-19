@@ -68,22 +68,76 @@ def generate_csv_output(data: Dict[str, Any], output_directory: Optional[Path] =
 
     Args:
         data: The data containing choices and model information.
-        csv_file_path: Path to the output CSV file. Defaults to 'output.csv'.
+        output_directory: Directory where the CSV file should be saved. If None, prompts user for location.
     """
-    rows: List[Dict[str, Any]] = [
-        {
-            'Image_ID': index,
-            'Model': data['model'],
-            'Description': choice['message']['parsed']['description'],
-            'Action': choice['message']['parsed']['action'],
-            'Reasoning': choice['message']['parsed']['reasoning']
-        }
-        for index, choice in enumerate(data['choices'], start=1)
-    ]
+    model = data.get('model', '')
     
+    if model.startswith('gpt-'):
+        # Handle ChatGPT response format
+        rows: List[Dict[str, Any]] = [
+            {
+                'Image_ID': index,
+                'Model': model,
+                'Description': choice['message']['parsed']['description'],
+                'Action': choice['message']['parsed']['action'],
+                'Reasoning': choice['message']['parsed']['reasoning']
+            }
+            for index, choice in enumerate(data.get('choices', []), start=1)
+        ]
+    
+    elif model.startswith('claude-'):
+        # Handle Claude response format
+        rows: List[Dict[str, Any]] = [
+            {
+                'Image_ID': 1,  # Assuming single response, set ID to 1
+                'Model': model,
+                'Description': parse_claude_content(data['content'], 'description'),
+                'Action': parse_claude_content(data['content'], 'action'),
+                'Reasoning': parse_claude_content(data['content'], 'reasoning')
+            }
+        ]
+    
+    else:
+        raise ValueError("Unsupported model type")
+
     df: pd.DataFrame = pd.DataFrame(rows)
-    csv_file_path = ask_save_location("result.csv")
+    
+    if output_directory is None:
+        csv_file_path = ask_save_location("result.csv")
+    else:
+        csv_file_path = output_directory / "result.csv"
+    
     df.to_csv(csv_file_path, index=False)
+    print(f"Results saved to {csv_file_path}")
+    
+
+def parse_claude_content(content: List[Dict[str, str]], field: str) -> str:
+    """
+    Parses the Claude response content to extract the specified field.
+
+    Args:
+        content: The content from the Claude response.
+        field: The field to extract (description, action, or reasoning).
+
+    Returns:
+        The extracted field value.
+    """
+    text = content[0]['text'] if content else ''
+    field_map = {
+        'description': 'Description: ',
+        'action': 'Recommended Action: ',
+        'reasoning': 'Reason: '
+    }
+    prefix = field_map.get(field, '')
+    
+    if prefix:
+        parts = text.split('\n\n')
+        for part in parts:
+            if part.startswith(prefix):
+                return part.replace(prefix, '').strip()
+    
+    return ''
+
 
 
 def select_file() -> str:
