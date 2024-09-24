@@ -3,13 +3,13 @@ import os
 import sys
 from auth import authenticate
 from gpt_batch_operations import upload_batch_file, create_batch_file, list_batches, check_batch_process, export_batch_result
-from utils import get_save_path
+from utils import get_save_path, generate_csv_output, json_to_dict, get_file_dict
 from pathlib import Path
 from typing import Dict, List, Callable
 from api_selector import chatgpt_request, gemini_request, claude_request, llama_request
 from create_batch import get_file_paths, generate_batch_file
 import common as common
-from claude_multi_request import parallel_process, get_file_dict
+from claude_multi_request import parallel_process
 
 LLMS: Dict[str, Callable[[], None]] = {
     "chatgpt": chatgpt_request,
@@ -91,9 +91,14 @@ def process(process_path: str, llm_model: str) -> None:
             batch_process(process_path, llm_model)
         elif llm_model == "claude":
             file_dict = get_file_dict(process_path)
-            results = parallel_process(file_dict)
-            for result in results:
-                print(result)
+            output_file = Path("../../Output/output_results.json")
+
+            parallel_process(file_dict, output_file)
+
+            result = json_to_dict(output_file)
+
+            generate_csv_output(result, llm_model) 
+            
     else:
         print(f"The path {process_path} is not a valid file, directory or zip file.")
         sys.exit(1)

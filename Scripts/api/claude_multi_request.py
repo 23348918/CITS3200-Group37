@@ -1,5 +1,3 @@
-# still needs working on
-
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, Any, List
@@ -7,6 +5,7 @@ from pathlib import Path
 import common
 from claude_request import analyse_image, analyse_video
 from tqdm import tqdm
+from utils import save_results_to_json, parse_claude_content
 
 def process_item(label: str, file_path: Path) -> Dict[str, Any]:
     """
@@ -26,26 +25,27 @@ def process_item(label: str, file_path: Path) -> Dict[str, Any]:
             result = analyse_video(file_path)
         else:
             result = analyse_image(file_path)
-        
-        # Ensure result is a dictionary with the correct fields
+
+        # Check the structure of the result and store the entire response
         if isinstance(result, dict):
-            result_dict["description"] = result.get("description", "Description not available")
-            result_dict["reasoning"] = result.get("reasoning", "Reasoning not available")
-            result_dict["action"] = result.get("action", "Action not available")
+            result_dict.update(result)  # Add the entire response to result_dict
         else:
             result_dict.update({"description": "Error processing file", "reasoning": "", "action": ""})
+
     except Exception as e:
         print(f"Error processing {file_path}: {e}")
         result_dict.update({"description": "Error processing file", "reasoning": "", "action": ""})
-    
+
     return result_dict
 
-def parallel_process(file_dict: Dict[str, Path], num_workers=10) -> List[Dict[str, Any]]:
+
+def parallel_process(file_dict: Dict[str, Path], output_file: str, num_workers=10,):
     """
     Process multiple files in parallel with Claude using a dictionary input.
 
     Args:
         file_dict: Dictionary where keys are labels and values are file paths.
+        output_file: Path to save the results as a JSON
         num_workers: Number of parallel workers to use.
 
     Returns:
@@ -62,24 +62,8 @@ def parallel_process(file_dict: Dict[str, Path], num_workers=10) -> List[Dict[st
                     results.append(result)
             except Exception as e:
                 print(f'Label {label} generated an exception: {e}')
+
+    # Save results to JSON file
+    save_results_to_json(results, output_file)
     
-    return results
-
-def get_file_dict(directory_path: Path) -> Dict[str, Path]:
-    """
-    Generate a dictionary of file paths and labels from a directory.
-
-    Args:
-        directory_path: The path to the directory containing files.
-
-    Returns:
-        A dictionary where keys are file names and values are full file paths.
-    """
-    file_dict = {}
-    for file_path in directory_path.glob('*'):
-        if file_path.is_file():
-            file_dict[file_path.name] = file_path
-    return file_dict
-
-
 

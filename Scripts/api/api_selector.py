@@ -3,7 +3,7 @@ from claude_request import analyse_image as claude_analyse_image, analyse_video 
 from typing import Dict
 from pathlib import Path
 import common as common
-from utils import generate_csv_output
+from utils import generate_csv_output, save_results_to_json, json_to_dict
 
 
 def chatgpt_request(process_path: Path) -> None:
@@ -22,7 +22,7 @@ def chatgpt_request(process_path: Path) -> None:
     if common.verbose:
         print(f"Received result from chatgpt-4o-mini: {result_dict}")
 
-    generate_csv_output(result_dict)
+    generate_csv_output(result_dict, "chat-gpt")
     if common.verbose:
         print("Media has been successfully exported to CSV.")
     pass
@@ -55,7 +55,11 @@ def claude_request(process_path: Path) -> None:
     if common.verbose:
         print(f"Received result from Claude-1: {result_dict}")
 
-    generate_csv_output(result_dict)
+    output_file = Path("../../Output/output_results.json")
+    save_results_to_json(result_dict, output_file)
+    result_dict = json_to_dict(output_file)
+
+    generate_csv_output(result_dict, "claude")
     if common.verbose:
         print("Media has been successfully exported to CSV.")
     pass
