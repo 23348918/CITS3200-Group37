@@ -1,7 +1,7 @@
 from openai import OpenAI
 from utils import result_to_dict, save_batch_results_to_file
 import openai
-
+import common
 
 def upload_batch_file(client: OpenAI, file_path: str) -> OpenAI:
     """
@@ -78,19 +78,24 @@ def check_batch_process(client: OpenAI, batch_id: str) -> str:
 
     Returns:
         str: Status of the batch.
-    """    
-    batch_status = client.batches.retrieve(batch_id)
+    """
+    try:
+         
+        batch_status = client.batches.retrieve(batch_id)
+    except Exception as e:
+        print(f"Batch ID {batch_id} not found")
+        exit(1) # exit the program if batch ID not found
     if batch_status.error_file_id:
         status_message = "Processing failed"
     else:
         status_message = "Processing success. You can now extract the file the file"
 
-    result = f"{batch_id} status: {batch_status.status} \t {status_message}"
+    # result = f"{batch_id} status: {batch_status.status} \t {status_message}"
 
-    return result
+    return (batch_status.status, status_message)
 
 
-def delete_exported_files(client: OpenAI, batch_results: OpenAI) -> None:
+def delete_exported_files(client: OpenAI, batch_results) -> None:
     """
     Deletes the exported files after saving the batch results.
 
@@ -101,18 +106,22 @@ def delete_exported_files(client: OpenAI, batch_results: OpenAI) -> None:
     Returns:
         None
     """
-    try:
-        if batch_results.input_file_id:
-            client.files.delete(batch_results.input_file_id)
-            print("deleting input file")
-        if batch_results.output_file_id:
-            client.files.delete(batch_results.output_file_id)
-            print("deleting output file")
-        if batch_results.error_file_id:
-            client.files.delete(batch_results.error_file_id)
-            print("deleting error file")
-    except Exception as e:
-        print(f"An error occurred while deleting the exported files: {e}")
+
+    if common.verbose:
+        print("Cleaning up generated files.")
+
+    if batch_results.input_file_id:
+        client.files.delete(batch_results.input_file_id)
+        # print (batch_results.input_file_id)
+
+    if batch_results.output_file_id:
+        client.files.delete(batch_results.output_file_id)
+        # print (batch_results.output_file_id)
+
+    if batch_results.error_file_id:
+        client.files.delete(batch_results.error_file_id)
+        # print (batch_results.error_file_id)
+
 
 
 
@@ -130,22 +139,36 @@ def export_batch_result(client: OpenAI, batch_id: str, out_path: str) -> None:
     """
     try:
         batch_results: OpenAI = client.batches.retrieve(batch_id)
-        if batch_results.error_file_id:
-            print(f"Batch processing was unsuccessful for {batch_id}.")
-            output_file_id: str = batch_results.error_file_id
-        else:
-            output_file_id: str = batch_results.output_file_id
-        
-        result: bytes = client.files.content(output_file_id).read()
-        dict_response: dict = result_to_dict(result)
     except Exception as e:
         print(f"Batch ID {batch_id} not found: {e}")
-        return False # Return False if failed to retrieve batch results
-    #TODO: Instead of saving to json, extract data and save to csv. Check function save_batch_results_to_file in utils.py
-    if not save_batch_results_to_file(dict_response, out_path): return False
-    # for exporting the batch results
-    #TODO: Instead of saving to json, extract data and save to csv
-    #delete_exported_files(client, batch_results)
+        return False
+    
+
+        
+    if batch_results.error_file_id:
+        print(f"Batch processing was unsuccessful for {batch_id}.")
+        output_file_id: str = batch_results.error_file_id
+    else:
+        output_file_id: str = batch_results.output_file_id
+    
+ 
+        
+    try:
+        test = client.files.retrieve(output_file_id)
+    except Exception:
+        print(f"You can only export the file once. Please rerun the process to re-export the results again.")
+        exit(1)
+    
+    result: bytes = client.files.content(output_file_id).read()
+    dict_response: dict = result_to_dict(result)
+     # Return False if failed to retrieve batch results
+    
+    #TODO: Instead of saving to json, extract data and save to csv. 
+    # Modift and chekc function save_batch_results_to_file in utils.py
+    if save_batch_results_to_file(dict_response, out_path): # if true, then successfully saved
+        delete_exported_files(client, batch_results)
+    # return True
+
 
 
 

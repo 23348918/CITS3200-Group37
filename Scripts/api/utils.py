@@ -183,9 +183,10 @@ def save_batch_results_to_file(dict_response: dict, out_path: str) -> None:
         
         if os.path.isfile(out_path):
             print(f"Batch results saved to {out_path}")
+            return True
         else:
             print(f"File was not created successfully. Batch result was not saved.")
-        return True
+            return False
     except (IOError, OSError) as e:
         print(f"An error occurred while writing the file: {e}")
         return False
