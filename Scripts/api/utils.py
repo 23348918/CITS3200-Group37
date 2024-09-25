@@ -9,6 +9,27 @@ from openai import OpenAI
 import sys
 
 
+def check_file_size(file_path: str) -> bool:
+    """
+    Checks if the size of the file at the given path exceeds the limit of 99MB.
+
+    Args:
+        file_path (str): The path to the file whose size is to be checked.
+
+    Returns:
+        bool: True if the file size is within the limit, False if it exceeds the limit.
+
+    """
+    batch_file_size = os.path.getsize(file_path)
+    file_limit = 99*1024*1024
+    if batch_file_size >= file_limit:
+        print(f"Processing limit of 99MB reached. Please reduce number of files to be processed.\nTerminating....")
+        return False
+    return True
+
+    
+    
+    
 def ask_save_location(default_filename: str) -> str:
     """
     Prompt the user to select a location to save a file. If no location is selected, return a default path.

@@ -1,5 +1,5 @@
 from openai import OpenAI
-from utils import result_to_dict, save_batch_results_to_file
+from utils import result_to_dict, save_batch_results_to_file, check_file_size
 import openai
 import common
 
@@ -16,6 +16,11 @@ def upload_batch_file(client: OpenAI, file_path: str) -> OpenAI:
     Raises:
         Exception: If the upload fails or the file cannot be accessed.
     """
+    if not check_file_size(file_path):
+        print(f"Processing limit of 99MB reached. Please reduce number of files to be processed.\nTerminating....")
+        exit(1)
+
+
     try:
         with open(file_path, "rb") as file:
             batch_input_file: OpenAI = client.files.create(
