@@ -3,7 +3,7 @@ import os
 import sys
 from auth import authenticate
 from gpt_batch_operations import upload_batch_file, create_batch_file, list_batches, check_batch_process, export_batch_result
-from utils import get_save_path, generate_csv_output, json_to_dict, get_file_dict
+from utils import get_save_path, generate_csv_output, get_file_dict
 from pathlib import Path
 from typing import Dict, List, Callable
 from api_selector import chatgpt_request, gemini_request, claude_request, llama_request
@@ -91,11 +91,8 @@ def process(process_path: str, llm_model: str) -> None:
             batch_process(process_path, llm_model)
         elif llm_model == "claude":
             file_dict = get_file_dict(process_path)
-            output_file = Path("../../Output/output_results.json")
 
-            parallel_process(file_dict, output_file)
-
-            result = json_to_dict(output_file)
+            result = parallel_process(file_dict)
 
             generate_csv_output(result, llm_model) 
             
