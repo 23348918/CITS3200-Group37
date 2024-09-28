@@ -76,7 +76,7 @@ def generate_csv_output(data: Dict[str, Any], model: str, output_directory: Opti
     """
     rows: List[Dict[str, Any]] = []  # Initialize rows here
 
-    if model.startswith('gpt'):
+    if model.startswith('chatgpt'):
         # Handle ChatGPT response format
         rows = [
             {
