@@ -96,6 +96,17 @@ def generate_csv_output(data: Dict[str, Any], output_directory: Optional[Path] =
                 'Reasoning': parse_claude_content(data['content'], 'reasoning')
             }
         ]
+    elif model.startswith('models/gemini-'):
+        rows: List[Dict[str, Any]] = [
+            {
+                'Image_ID': 1,  # Assuming single response, set ID to 1
+                'Model': model,
+                'Description': data['description'],
+                'Action': data['action'],
+                'Reasoning': data['reasoning']
+            }
+        ]
+
     
     else:
         raise ValueError("Unsupported model type")

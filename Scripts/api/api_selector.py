@@ -1,5 +1,6 @@
 from gpt_request import analyse_image as gpt_analyse_image, analyse_video as gpt_analyse_video
 from claude_request import analyse_image as claude_analyse_image, analyse_video as claude_analyse_video
+from gemini_request import analyse_image as gemini_analyse_image, analyse_video as gemini_analyse_video
 from typing import Dict
 from pathlib import Path
 import common as common
@@ -25,7 +26,6 @@ def chatgpt_request(process_path: Path) -> None:
     generate_csv_output(result_dict)
     if common.verbose:
         print("Media has been successfully exported to CSV.")
-    pass
 
 
 def gemini_request(process_path: Path) -> None:
@@ -35,8 +35,18 @@ def gemini_request(process_path: Path) -> None:
     Args:
         process_path: location of media to be processed by LLM
     """
-    print("DONE")
-    pass
+    if common.verbose:
+        print(f"Sending {process_path} to gemini-1.5-pro...")
+    if process_path.suffix in common.VIDEO_EXTENSIONS:
+        result_dict: Dict[str, str] = gemini_analyse_video(process_path)
+    else:
+        result_dict: Dict[str, str] = gemini_analyse_image(process_path)
+    if common.verbose:
+        print(f"Received result from gemini-1.5-pro: {result_dict}")
+
+    generate_csv_output(result_dict)
+    if common.verbose:
+        print("Media has been successfully exported to CSV.")
 
 
 def claude_request(process_path: Path) -> None:
@@ -58,7 +68,6 @@ def claude_request(process_path: Path) -> None:
     generate_csv_output(result_dict)
     if common.verbose:
         print("Media has been successfully exported to CSV.")
-    pass
 
 
 def llama_request(process_path: Path) -> None:

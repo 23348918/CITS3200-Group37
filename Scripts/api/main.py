@@ -10,6 +10,7 @@ from api_selector import chatgpt_request, gemini_request, claude_request, llama_
 from create_batch import get_file_paths, generate_batch_file
 import common as common
 from claude_multi_request import parallel_process, get_file_dict
+from pathlib import Path
 
 LLMS: Dict[str, Callable[[], None]] = {
     "chatgpt": chatgpt_request,
@@ -205,11 +206,11 @@ def main() -> None:
     """Main function to parse arguments, validate paths, run LLM model, list, check and export batch process."""
     args: argparse.Namespace = parse_arguments()
 
-    # TODO: Authenticate keys for all 3 models, program should run if the desired model key is in place.
-    if args.llm_model == "chatgpt":
-        common.chatgpt_client = authenticate("../../Private/ClientKeys/chatgpt-api.txt")
-    elif args.llm_model == "claude":
-        common.claude_client = authenticate("../../Private/ClientKeys/claude-api.txt")
+    script_dir = Path(__file__).parent
+    file_path = script_dir / ".." / ".." / "Private" / "ClientKeys" / f"{args.llm_model}-api.txt"
+    if not file_path.exists():
+        raise(f"{file_path} does not exist.") 
+    common.chatgpt_client = authenticate(str(file_path))
 
     if args.verbose:
         common.set_verbose(True)

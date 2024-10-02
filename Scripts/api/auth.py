@@ -2,6 +2,7 @@ import sys
 from openai import OpenAI
 import os
 from anthropic import Anthropic  # Assuming you're using the Anthropic Python client for Claude.
+import google.generativeai as genai
 
 def authenticate(auth_path: str) -> object:
     """Authenticates with the appropriate service based on the path to the API key.
@@ -37,6 +38,16 @@ def authenticate(auth_path: str) -> object:
         except Exception as e:
             print(f"Failed to authenticate Claude: {e}")
             sys.exit(1)
+
+    elif "gemini" in auth_path.lower():
+        try:
+            genai.configure(api_key=api_key)
+            print("Authenticated with Gemini (Google) successfully.")
+            return
+        except Exception as e:
+            print(f"Failed to authenticate Gemini: {e}")
+            sys.exit(1)
+
 
     else:
         print(f"Unrecognized auth path: {auth_path}. Please include 'chatgpt' or 'claude' in the file name.")
