@@ -22,7 +22,7 @@ def chatgpt_request(process_path: Path) -> None:
     if common.verbose:
         print(f"Received result from chatgpt-4o-mini: {result_dict}")
 
-    generate_csv_output(result_dict, "chat-gpt")
+    generate_csv_output(result_dict, "gpt")
     if common.verbose:
         print("Media has been successfully exported to CSV.")
     pass
