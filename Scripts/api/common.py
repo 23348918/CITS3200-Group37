@@ -1,12 +1,16 @@
 from openai import OpenAI
 from typing import Tuple
-
+from anthropic import Anthropic
 
 # Global Variables
 chatgpt_client: OpenAI = None
 gemini_client = None
-claude_client = None
+claude_client = Anthropic = None
 verbose: bool = False
+auto: bool = False
+
+PROCESS_STATUS : list = ["completed", "failed",  " cancelled", "expired"]
+WAITING_TIMER: int = 2  # Waiting timer in seconds
 
 # Constants
 VALID_EXTENSIONS: Tuple[str, ...] = (

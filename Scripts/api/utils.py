@@ -9,6 +9,27 @@ from openai import OpenAI
 import sys
 
 
+def check_file_size(file_path: str) -> bool:
+    """
+    Checks if the size of the file at the given path exceeds the limit of 99MB.
+
+    Args:
+        file_path (str): The path to the file whose size is to be checked.
+
+    Returns:
+        bool: True if the file size is within the limit, False if it exceeds the limit.
+
+    """
+    batch_file_size = os.path.getsize(file_path)
+    file_limit = 99*1024*1024
+    if batch_file_size >= file_limit:
+        print(f"Processing limit of 99MB reached. Please reduce number of files to be processed.\nTerminating....")
+        return False
+    return True
+
+    
+    
+    
 def ask_save_location(default_filename: str) -> str:
     """
     Prompt the user to select a location to save a file. If no location is selected, return a default path.
@@ -62,28 +83,69 @@ def get_save_path(filename: str, directory: Path):
     
     return file_path
 
-def generate_csv_output(data: Dict[str, Any], output_directory: Optional[Path] = None) -> None:
+import pandas as pd
+from pathlib import Path
+from typing import Dict, Any, List, Optional
+
+def generate_csv_output(data: Dict[str, Any], model: str, output_directory: Optional[Path] = None) -> None:
     """
     Exports the parsed data to a CSV file.
 
     Args:
         data: The data containing choices and model information.
-        csv_file_path: Path to the output CSV file. Defaults to 'output.csv'.
+        output_directory: Directory where the CSV file should be saved. If None, prompts user for location.
     """
-    rows: List[Dict[str, Any]] = [
-        {
-            'Image_ID': index,
-            'Model': data['model'],
-            'Description': choice['message']['parsed']['description'],
-            'Action': choice['message']['parsed']['action'],
-            'Reasoning': choice['message']['parsed']['reasoning']
-        }
-        for index, choice in enumerate(data['choices'], start=1)
-    ]
-    
+    rows: List[Dict[str, Any]] = []  # Initialize rows here
+
+    if model.startswith('gpt'):
+        # Handle ChatGPT response format
+        rows = [
+            {
+                'Image_ID': index,
+                'Model': model,
+                'Description': choice['message']['parsed'].get('description', ''),
+                'Action': choice['message']['parsed'].get('action', ''),
+                'Reasoning': choice['message']['parsed'].get('reasoning', '')
+            }
+            for index, choice in enumerate(data.get('choices', []), start=1)
+        ]
+
+    elif model.startswith('claude'):
+        for entry in data:
+            # Handle Claude response format
+            content = entry.get('content', [])
+            text = content[0].get('text', '') if content else ''
+            parts = text.split("\n\n")
+            
+            description = parts[0].replace("Description: ", "").replace("1. ", "").strip() if len(parts) > 0 else ''
+            action = parts[1].replace("Recommended Action: ", "").replace("2. ", "").strip() if len(parts) > 1 else ''
+            reasoning = parts[2].replace("Reason: ", "").replace("3. ", "").strip() if len(parts) > 2 else ''
+
+            rows.append(
+                {
+                    'Image_ID': entry.get('label', 'Unknown Image'),
+                    'Model': entry.get('model', ''),
+                    'Description': description,
+                    'Action': action,
+                    'Reasoning': reasoning
+                }
+            )
+
+    else:
+        raise ValueError("Unsupported model type")
+
+    # Create DataFrame from the rows
     df: pd.DataFrame = pd.DataFrame(rows)
-    csv_file_path = ask_save_location("result.csv")
+
+    # Prompt the user for a save location or use the output directory
+    if output_directory is None:
+        csv_file_path = ask_save_location("result.csv")
+    else:
+        csv_file_path = output_directory / "result.csv"
+
+    # Save the DataFrame to CSV
     df.to_csv(csv_file_path, index=False)
+    print(f"Results saved to {csv_file_path}")
 
 
 def select_file() -> str:
@@ -142,9 +204,81 @@ def save_batch_results_to_file(dict_response: dict, out_path: str) -> None:
         
         if os.path.isfile(out_path):
             print(f"Batch results saved to {out_path}")
+            return True
         else:
             print(f"File was not created successfully. Batch result was not saved.")
-        return True
+            return False
     except (IOError, OSError) as e:
         print(f"An error occurred while writing the file: {e}")
         return False
+    
+def get_file_dict(directory_path: Path) -> Dict[str, Path]:
+    """
+    Generate a dictionary of file paths and labels from a directory.
+
+    Args:
+        directory_path: The path to the directory containing files.
+
+    Returns:
+        A dictionary where keys are file names and values are full file paths.
+    """
+    file_dict = {}
+    for file_path in directory_path.glob('*'):
+        if file_path.is_file():
+            file_dict[file_path.name] = file_path
+    return file_dict
+
+
+def save_results_to_json(results: List[Dict[str, Any]], output_file: Path) -> None:
+    """
+    Saves the processed results to a JSON file in the specified directory.
+
+    Args:
+        results: List of dictionaries containing results for each file.
+        output_file: The path to save the JSON file in.
+    """
+    
+    with open(output_file, 'w') as json_file:
+        json.dump(results, json_file, indent=4)
+    print(f"Results saved to {output_file}")
+
+
+def json_to_dict(file_path: str) -> List[Dict[str, Any]]:
+    """Converts the content of a JSON file to a list of dictionaries."""
+    try:
+        with open(file_path, 'r') as file:
+            data_list = json.load(file)
+            if not isinstance(data_list, list):
+                raise ValueError("JSON content must be a list of dictionaries.")
+            return data_list
+    except (IOError, json.JSONDecodeError) as e:
+        print(f"Error reading the JSON file: {e}")
+        return []
+    
+    
+def parse_claude_content(content: List[Dict[str, str]], field: str) -> str:
+    """
+    Parses the Claude response content to extract the specified field.
+
+    Args:
+        content: The content from the Claude response.
+        field: The field to extract (description, action, or reasoning).
+
+    Returns:
+        The extracted field value.
+    """
+    text = content[0]['text'] if content else ''
+    field_map = {
+        'description': 'Description: ',
+        'action': 'Recommended Action: ',
+        'reasoning': 'Reason: '
+    }
+    prefix = field_map.get(field, '')
+    
+    if prefix:
+        parts = text.split('\n\n')
+        for part in parts:
+            if part.startswith(prefix):
+                return part.replace(prefix, '').strip()
+    
+    return ''
