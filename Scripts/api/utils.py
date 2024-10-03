@@ -5,9 +5,7 @@ from tkinter import filedialog
 from pathlib import Path
 import os
 import json
-from openai import OpenAI
 import sys
-
 
 def ask_save_location(default_filename: str) -> str:
     """
@@ -62,16 +60,14 @@ def get_save_path(filename: str, directory: Path):
     
     return file_path
 
-import pandas as pd
-from pathlib import Path
-from typing import Dict, Any, List, Optional
 
 def generate_csv_output(data: Dict[str, Any], model: str, output_directory: Optional[Path] = None) -> None:
     """
-    Exports the parsed data to a CSV file.
+    Exports the parsed data to a CSV file, handling both single and multi-image Claude responses.
 
     Args:
-        data: The data containing choices and model information.
+        data: The data containing Claude API response, either a single response or multiple.
+        model: The model name (e.g., 'claude').
         output_directory: Directory where the CSV file should be saved. If None, prompts user for location.
     """
     rows: List[Dict[str, Any]] = []  # Initialize rows here
@@ -90,25 +86,48 @@ def generate_csv_output(data: Dict[str, Any], model: str, output_directory: Opti
         ]
 
     elif model.startswith('claude'):
-        for entry in data:
-            # Handle Claude response format
-            content = entry.get('content', [])
+        # Check if data is a list (multi-image) or dict (single-image)
+        if isinstance(data, list):
+            # Multi-image case
+            for entry in data:
+                content = entry.get('content', [])
+                text = content[0].get('text', '') if content else ''
+                parts = text.split("\n\n")
+
+                description = parts[0].replace("Description: ", "").replace("1. ", "").strip() if len(parts) > 0 else ''
+                action = parts[1].replace("Recommended Action: ", "").replace("2. ", "").strip() if len(parts) > 1 else ''
+                reasoning = parts[2].replace("Reason: ", "").replace("3. ", "").strip() if len(parts) > 2 else ''
+
+                rows.append(
+                    {
+                        'Image_ID': entry.get('label', 'Unknown Image'),
+                        'Model': entry.get('model', ''),
+                        'Description': description,
+                        'Action': action,
+                        'Reasoning': reasoning
+                    }
+                )
+        elif isinstance(data, dict):
+            # Single-image case
+            content = data.get('content', [])
             text = content[0].get('text', '') if content else ''
             parts = text.split("\n\n")
-            
+
             description = parts[0].replace("Description: ", "").replace("1. ", "").strip() if len(parts) > 0 else ''
             action = parts[1].replace("Recommended Action: ", "").replace("2. ", "").strip() if len(parts) > 1 else ''
             reasoning = parts[2].replace("Reason: ", "").replace("3. ", "").strip() if len(parts) > 2 else ''
 
             rows.append(
                 {
-                    'Image_ID': entry.get('label', 'Unknown Image'),
-                    'Model': entry.get('model', ''),
+                    'Image_ID': data.get('label', 'Unknown Image'),
+                    'Model': data.get('model', ''),
                     'Description': description,
                     'Action': action,
                     'Reasoning': reasoning
                 }
             )
+        else:
+            raise ValueError("Invalid data format for Claude model response.")
 
     else:
         raise ValueError("Unsupported model type")
@@ -125,6 +144,7 @@ def generate_csv_output(data: Dict[str, Any], model: str, output_directory: Opti
     # Save the DataFrame to CSV
     df.to_csv(csv_file_path, index=False)
     print(f"Results saved to {csv_file_path}")
+
 
 
 def select_file() -> str:
@@ -163,7 +183,6 @@ def result_to_dict(content: bytes) -> Dict[str, Any]:
         return {}
     
     return(data_list)
-
 
 
 def save_batch_results_to_file(dict_response: dict, out_path: str) -> None:
@@ -206,32 +225,6 @@ def get_file_dict(directory_path: Path) -> Dict[str, Path]:
             file_dict[file_path.name] = file_path
     return file_dict
 
-
-def save_results_to_json(results: List[Dict[str, Any]], output_file: Path) -> None:
-    """
-    Saves the processed results to a JSON file in the specified directory.
-
-    Args:
-        results: List of dictionaries containing results for each file.
-        output_file: The path to save the JSON file in.
-    """
-    
-    with open(output_file, 'w') as json_file:
-        json.dump(results, json_file, indent=4)
-    print(f"Results saved to {output_file}")
-
-
-def json_to_dict(file_path: str) -> List[Dict[str, Any]]:
-    """Converts the content of a JSON file to a list of dictionaries."""
-    try:
-        with open(file_path, 'r') as file:
-            data_list = json.load(file)
-            if not isinstance(data_list, list):
-                raise ValueError("JSON content must be a list of dictionaries.")
-            return data_list
-    except (IOError, json.JSONDecodeError) as e:
-        print(f"Error reading the JSON file: {e}")
-        return []
     
     
 def parse_claude_content(content: List[Dict[str, str]], field: str) -> str:
