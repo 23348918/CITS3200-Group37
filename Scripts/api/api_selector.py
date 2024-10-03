@@ -4,7 +4,7 @@ from gemini_request import analyse_image as gemini_analyse_image, analyse_video 
 from typing import Dict
 from pathlib import Path
 import common as common
-from utils import generate_csv_output
+from utils import generate_csv_output, save_results_to_json, json_to_dict
 
 
 def chatgpt_request(process_path: Path) -> None:
@@ -22,8 +22,9 @@ def chatgpt_request(process_path: Path) -> None:
         result_dict: Dict[str, str] = gpt_analyse_image(process_path)
     if common.verbose:
         print(f"Received result from chatgpt-4o-mini: {result_dict}")
-
+        
     generate_csv_output(result_dict, "chatgpt-4o-mini")
+
     if common.verbose:
         print("Media has been successfully exported to CSV.")
 
@@ -66,5 +67,6 @@ def claude_request(process_path: Path) -> None:
         print(f"Received result from Claude-1: {result_dict}")
 
     generate_csv_output([result_dict], "claude-3-opus-20240229")
+
     if common.verbose:
         print("Media has been successfully exported to CSV.")
