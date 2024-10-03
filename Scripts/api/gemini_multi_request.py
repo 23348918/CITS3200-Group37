@@ -5,12 +5,12 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, Any, List
 from pathlib import Path
 import common
-from claude_request import analyse_image, analyse_video
+from gemini_request import analyse_image, analyse_video
 from tqdm import tqdm
 
 def process_item(label: str, file_path: Path) -> Dict[str, Any]:
     """
-    Process a single image or video file with Claude and include the label.
+    Process a single image or video file with Gemini and include the label.
 
     Args:
         label: A descriptive label for the file.

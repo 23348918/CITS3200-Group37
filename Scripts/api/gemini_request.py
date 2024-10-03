@@ -3,7 +3,6 @@ import google.generativeai as genai
 from pydantic import BaseModel
 import common
 from PIL import Image
-import json
 import time
 import re
 
@@ -14,7 +13,7 @@ def analyse_image(file_path: str, model_name: Optional[str] = "models/gemini-1.5
 
     Args:
         file_path: Path to the image file.
-        model: The model to use for analysis. Defaults to "models/gemini-1.5-pro".
+        model_name: The model to use for analysis. Defaults to "models/gemini-1.5-pro".
 
     Returns:
         The analysis response.
@@ -30,18 +29,17 @@ def analyse_image(file_path: str, model_name: Optional[str] = "models/gemini-1.5
             [common.PROMPT, img],
             generation_config=genai.GenerationConfig(
                 response_mime_type="application/json",
-                response_schema = list[AnalysisResponse])
+                response_schema = list[AnalysisResponse],
+                max_output_tokens = 300)
                 )
 
     # Convert to dict then json string
-    json_text = json.loads(response.text)[0]
-    response_dic = {
-        "model": "models/gemini-1.5-pro",
-        "description": json_text["description"],
-        "action": json_text["action"],
-        "reasoning": json_text["reasoning"]
-        }
-    return response_dic
+    response_dictionary: Dict[str, str] = {"model": model_name}
+    for json_section in AnalysisResponse.model_fields.keys():
+        match: re.Match[str] = re.search(f'"{json_section}":\\s*"([^"]*)', response.text)
+        response_dictionary[json_section] = match.group(1) if match else ""
+
+    return response_dictionary
     
 
 def analyse_video(file_path: str, model_name: Optional[str] = "models/gemini-1.5-pro") -> Dict[str, str]:
@@ -49,7 +47,7 @@ def analyse_video(file_path: str, model_name: Optional[str] = "models/gemini-1.5
 
     Args:
         file_path: Path to the video file.
-        model: The model to use for analysis. Defaults to "gpt-4o-mini".
+        model_name: The model to use for analysis. Defaults to "models/gemini-1.5-pro".
 
     Returns:
         The analysis response.
@@ -78,9 +76,9 @@ def analyse_video(file_path: str, model_name: Optional[str] = "models/gemini-1.5
                 )
 
     # Convert to dict then json string
-    response_dictionary = {"model": model_name}
+    response_dictionary: Dict[str, str] = {"model": model_name}
     for json_section in AnalysisResponse.model_fields.keys():
-        match = re.search(f'"{json_section}":\\s*"([^"]*)', response.text)
+        match: re.Match[str] = re.search(f'"{json_section}":\\s*"([^"]*)', response.text)
         response_dictionary[json_section] = match.group(1) if match else ""
 
     return response_dictionary

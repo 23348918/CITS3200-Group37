@@ -62,7 +62,7 @@ def get_save_path(filename: str, directory: Path):
     
     return file_path
 
-def generate_csv_output(data: Dict[str, Any], output_directory: Optional[Path] = None) -> None:
+def generate_csv_output(data: Dict[str, Any], model_name: str, output_directory: Optional[Path] = None) -> None:
     """
     Exports the parsed data to a CSV file.
 
@@ -70,14 +70,13 @@ def generate_csv_output(data: Dict[str, Any], output_directory: Optional[Path] =
         data: The data containing choices and model information.
         output_directory: Directory where the CSV file should be saved. If None, prompts user for location.
     """
-    model = data.get('model', '')
     
-    if model.startswith('gpt-'):
+    if model_name.startswith('gpt-'):
         # Handle ChatGPT response format
         rows: List[Dict[str, Any]] = [
             {
                 'Image_ID': index,
-                'Model': model,
+                'Model': model_name,
                 'Description': choice['message']['parsed']['description'],
                 'Action': choice['message']['parsed']['action'],
                 'Reasoning': choice['message']['parsed']['reasoning']
@@ -85,26 +84,27 @@ def generate_csv_output(data: Dict[str, Any], output_directory: Optional[Path] =
             for index, choice in enumerate(data.get('choices', []), start=1)
         ]
     
-    elif model.startswith('claude-'):
+    elif model_name.startswith('claude-'):
         # Handle Claude response format
         rows: List[Dict[str, Any]] = [
             {
-                'Image_ID': 1,  # Assuming single response, set ID to 1
-                'Model': model,
+                'Image_ID': 1,
+                'Model': model_name,
                 'Description': parse_claude_content(data['content'], 'description'),
                 'Action': parse_claude_content(data['content'], 'action'),
                 'Reasoning': parse_claude_content(data['content'], 'reasoning')
             }
         ]
-    elif model.startswith('models/gemini-'):
+    elif model_name.startswith('models/gemini-'):
         rows: List[Dict[str, Any]] = [
             {
-                'Image_ID': 1,  # Assuming single response, set ID to 1
-                'Model': model,
-                'Description': data['description'],
-                'Action': data['action'],
-                'Reasoning': data['reasoning']
+                'Image_ID': index,
+                'Model': model_name,
+                'Description': single_data['description'],
+                'Action': single_data['action'],
+                'Reasoning': single_data['reasoning']
             }
+            for index, single_data in enumerate(data)
         ]
 
     
@@ -213,3 +213,19 @@ def save_batch_results_to_file(dict_response: dict, out_path: str) -> None:
     except (IOError, OSError) as e:
         print(f"An error occurred while writing the file: {e}")
         return False
+    
+def get_file_dict(directory_path: Path) -> Dict[str, Path]:
+    """
+    Generate a dictionary of file paths and labels from a directory.
+
+    Args:
+        directory_path: The path to the directory containing files.
+
+    Returns:
+        A dictionary where keys are file names and values are full file paths.
+    """
+    file_dict = {}
+    for file_path in directory_path.glob('*'):
+        if file_path.is_file():
+            file_dict[file_path.name] = file_path
+    return file_dict

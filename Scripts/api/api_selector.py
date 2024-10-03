@@ -23,7 +23,7 @@ def chatgpt_request(process_path: Path) -> None:
     if common.verbose:
         print(f"Received result from chatgpt-4o-mini: {result_dict}")
 
-    generate_csv_output(result_dict)
+    generate_csv_output(result_dict, "chatgpt-4o-mini")
     if common.verbose:
         print("Media has been successfully exported to CSV.")
 
@@ -44,7 +44,7 @@ def gemini_request(process_path: Path) -> None:
     if common.verbose:
         print(f"Received result from gemini-1.5-pro: {result_dict}")
 
-    generate_csv_output(result_dict)
+    generate_csv_output([result_dict], "models/gemini-1.5-pro")
     if common.verbose:
         print("Media has been successfully exported to CSV.")
 
@@ -65,17 +65,6 @@ def claude_request(process_path: Path) -> None:
     if common.verbose:
         print(f"Received result from Claude-1: {result_dict}")
 
-    generate_csv_output(result_dict)
+    generate_csv_output([result_dict], "claude-3-opus-20240229")
     if common.verbose:
         print("Media has been successfully exported to CSV.")
-
-
-def llama_request(process_path: Path) -> None:
-    """
-    Process a request to the LLaMA API.
-
-    Args:
-        process_path: location of media to be processed by LLM
-    """
-    print("DONE")
-    pass
