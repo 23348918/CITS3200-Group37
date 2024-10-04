@@ -1,11 +1,11 @@
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
-from typing import Dict, Any, List
+from typing import Dict, Any
 from pathlib import Path
 import common
 from claude_request import analyse_image, analyse_video
 from tqdm import tqdm
-from utils import save_results_to_json, parse_claude_content
+
 
 def process_item(label: str, file_path: Path) -> Dict[str, Any]:
     """
@@ -36,10 +36,10 @@ def process_item(label: str, file_path: Path) -> Dict[str, Any]:
         print(f"Error processing {file_path}: {e}")
         result_dict.update({"description": "Error processing file", "reasoning": "", "action": ""})
 
-    return result_dict
+    return result_dict 
 
 
-def parallel_process(file_dict: Dict[str, Path], output_file: str, num_workers=10,):
+def parallel_process(file_dict: Dict[str, Path], num_workers=10,):
     """
     Process multiple files in parallel with Claude using a dictionary input.
 
@@ -51,7 +51,7 @@ def parallel_process(file_dict: Dict[str, Path], output_file: str, num_workers=1
     Returns:
         A list of dictionaries containing results for each file.
     """
-    results = []
+    processed_results = []
     with ThreadPoolExecutor(max_workers=num_workers) as executor:
         future_to_file = {executor.submit(process_item, label, file_path): label for label, file_path in file_dict.items()}
         for future in tqdm(concurrent.futures.as_completed(future_to_file), total=len(future_to_file), desc="Processing items"):
@@ -59,11 +59,10 @@ def parallel_process(file_dict: Dict[str, Path], output_file: str, num_workers=1
             try:
                 result = future.result()
                 if result is not None:
-                    results.append(result)
+                    processed_results.append(result)
             except Exception as e:
                 print(f'Label {label} generated an exception: {e}')
 
-    # Save results to JSON file
-    save_results_to_json(results, output_file)
+    return processed_results
     
 
