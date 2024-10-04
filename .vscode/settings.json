@@ -1,3 +1,7 @@
 {
-  "python.analysis.extraPaths": ["./Scripts"]
+  "python.analysis.extraPaths": [
+    "./Scripts",
+    "./Scripts/api",
+    "./Scripts/api_v2"
+  ]
 }
