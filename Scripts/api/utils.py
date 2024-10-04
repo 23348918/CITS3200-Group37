@@ -7,6 +7,24 @@ import os
 import json
 import sys
 
+def check_file_size(file_path: str) -> bool:
+    """
+    Checks if the size of the file at the given path exceeds the limit of 99MB.
+
+    Args:
+        file_path (str): The path to the file whose size is to be checked.
+
+    Returns:
+        bool: True if the file size is within the limit, False if it exceeds the limit.
+
+    """
+    batch_file_size = os.path.getsize(file_path)
+    file_limit = 99*1024*1024
+    if batch_file_size >= file_limit:
+        print(f"Processing limit of 99MB reached. Please reduce number of files to be processed.\nTerminating....")
+        return False
+    return True
+
 def ask_save_location(default_filename: str) -> str:
     """
     Prompt the user to select a location to save a file. If no location is selected, return a default path.
@@ -72,7 +90,7 @@ def generate_csv_output(data: Dict[str, Any], model: str, output_directory: Opti
     """
     rows: List[Dict[str, Any]] = []  # Initialize rows here
 
-    if model.startswith('chatgpt'):
+    if model.startswith('gpt'):
         # Handle ChatGPT response format
         rows = [
             {
@@ -202,9 +220,10 @@ def save_batch_results_to_file(dict_response: dict, out_path: str) -> None:
         
         if os.path.isfile(out_path):
             print(f"Batch results saved to {out_path}")
+            return True
         else:
             print(f"File was not created successfully. Batch result was not saved.")
-        return True
+            return False
     except (IOError, OSError) as e:
         print(f"An error occurred while writing the file: {e}")
         return False
