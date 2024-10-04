@@ -78,8 +78,7 @@ def get_save_path(filename: str, directory: Path):
     
     return file_path
 
-
-def generate_csv_output(data: Dict[str, Any], model: str, output_directory: Optional[Path] = None) -> None:
+def generate_csv_output(data: Dict[str, Any], model_name: str, output_directory: Optional[Path] = None) -> None:
     """
     Exports the parsed data to a CSV file, handling both single and multi-image Claude responses.
 
@@ -88,22 +87,31 @@ def generate_csv_output(data: Dict[str, Any], model: str, output_directory: Opti
         model: The model name (e.g., 'claude').
         output_directory: Directory where the CSV file should be saved. If None, prompts user for location.
     """
-    rows: List[Dict[str, Any]] = []  # Initialize rows here
-
-    if model.startswith('gpt'):
+    
+    if model_name.startswith('gpt-'):
         # Handle ChatGPT response format
         rows = [
             {
                 'Image_ID': index,
-                'Model': model,
-                'Description': choice['message']['parsed'].get('description', ''),
-                'Action': choice['message']['parsed'].get('action', ''),
-                'Reasoning': choice['message']['parsed'].get('reasoning', '')
+                'Model': model_name,
+                'Description': choice['message']['parsed']['description'],
+                'Action': choice['message']['parsed']['action'],
+                'Reasoning': choice['message']['parsed']['reasoning']
             }
             for index, choice in enumerate(data.get('choices', []), start=1)
         ]
-
-    elif model.startswith('claude'):
+    elif model_name.startswith('models/gemini-'):
+        rows: List[Dict[str, Any]] = [
+            {
+                'Image_ID': index,
+                'Model': model_name,
+                'Description': single_data['description'],
+                'Action': single_data['action'],
+                'Reasoning': single_data['reasoning']
+            }
+            for index, single_data in enumerate(data)
+        ]
+    elif model_name.startswith('claude'):
         # Check if data is a list (multi-image) or dict (single-image)
         if isinstance(data, list):
             # Multi-image case
