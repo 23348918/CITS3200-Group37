@@ -4,7 +4,8 @@ from gemini_request import analyse_image as gemini_analyse_image, analyse_video 
 from typing import Dict
 from pathlib import Path
 import common as common
-from utils import generate_csv_output, save_results_to_json, json_to_dict
+from utils import generate_csv_output
+import os
 
 
 def chatgpt_request(process_path: Path) -> None:
@@ -57,16 +58,22 @@ def claude_request(process_path: Path) -> None:
     Args:
         process_path: location of media to be processed by LLM
     """          
+    result_dict = {"label": os.path.basename(process_path)}
     if common.verbose:
         print(f"Sending {process_path} to Claude-1...")
+
     if process_path.suffix in common.VIDEO_EXTENSIONS:
-        result_dict: Dict[str, str] = claude_analyse_video(process_path)
+        response = claude_analyse_video(process_path)
     else:
-        result_dict: Dict[str, str] = claude_analyse_image(process_path)
+        response = claude_analyse_image(process_path)
+    
+    # Update result_dict with the response content
+    result_dict.update(response)
+    
     if common.verbose:
-        print(f"Received result from Claude-1: {result_dict}")
-
-    generate_csv_output([result_dict], "claude-3-opus-20240229")
-
+        print(f"Received result from Claude-1: {result_dict}") 
+        
+    generate_csv_output(result_dict, "claude")
+    
     if common.verbose:
         print("Media has been successfully exported to CSV.")
