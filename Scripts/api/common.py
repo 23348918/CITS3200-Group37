@@ -1,6 +1,7 @@
 from openai import OpenAI
 from typing import Tuple
 from anthropic import Anthropic
+from pydantic import BaseModel
 
 # Global Variables
 chatgpt_client: OpenAI = None
@@ -8,6 +9,18 @@ gemini_client = None
 claude_client = Anthropic = None
 verbose: bool = False
 auto: bool = False
+is_custom: bool = False
+
+# Global Classes
+class AnalysisResponse(BaseModel):
+        description: str
+        reasoning: str
+        action: str
+
+class CustomAnalysisResponse(AnalysisResponse):
+        custom_1: None
+        custom_2: None
+        custom_3: None
 
 PROCESS_STATUS : list = ["completed", "failed",  " cancelled", "expired"]
 WAITING_TIMER: int = 2  # Waiting timer in seconds
@@ -48,3 +61,7 @@ def set_prompt(prompt: str) -> None:
     PROMPT = prompt
     if verbose:
         print(f"Custom Prompt: {prompt}")
+
+def set_custom(value: bool) -> None:
+    global is_custom
+    is_custom = value

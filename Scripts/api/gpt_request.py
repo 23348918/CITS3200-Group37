@@ -59,10 +59,6 @@ def analyse_image(file_path: str, model: Optional[str] = "gpt-4o-mini") -> Dict[
     Returns:
         The analysis response.
     """
-    class AnalysisResponse(BaseModel):
-        description: str
-        reasoning: str
-        action: str
 
     image_path: str = encode_image(file_path)
     response: Dict[str, str] = common.chatgpt_client.beta.chat.completions.parse(
@@ -88,7 +84,7 @@ def analyse_image(file_path: str, model: Optional[str] = "gpt-4o-mini") -> Dict[
                 ]
             }
         ],
-        response_format=AnalysisResponse,
+        response_format=common.AnalysisResponse,
     )
 
     # Convert to dict then json string
@@ -105,10 +101,6 @@ def analyse_video(file_path: str, model: Optional[str] = "gpt-4o-mini") -> Dict[
     Returns:
         The analysis response.
     """
-    class AnalysisResponse(BaseModel):
-        description: str
-        reasoning: str
-        action: str
 
     video_path: list[str] = encode_video(file_path)
     model_messages = [
@@ -138,7 +130,7 @@ def analyse_video(file_path: str, model: Optional[str] = "gpt-4o-mini") -> Dict[
     response: Dict[str, str] = common.chatgpt_client.beta.chat.completions.parse(
         model=model,
         messages=model_messages,
-        response_format=AnalysisResponse,
+        response_format=common.AnalysisResponse,
     )
 
     # Convert to dict then json string

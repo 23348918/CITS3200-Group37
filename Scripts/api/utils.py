@@ -95,6 +95,8 @@ def generate_csv_output(data: Dict[str, Any], model: str, output_directory: Opti
         data: The data containing choices and model information.
         output_directory: Directory where the CSV file should be saved. If None, prompts user for location.
     """
+    
+    if model_name.startswith('chatgpt'):
     rows: List[Dict[str, Any]] = []  # Initialize rows here
 
     if model.startswith('gpt'):

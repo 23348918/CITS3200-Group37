@@ -191,6 +191,7 @@ def parse_arguments() -> argparse.Namespace:
     # Process operation
     group.add_argument(
         "-process",
+        "-p",
         metavar="FILE_PATH",
         help="Process the input file or directory."
     )
@@ -203,6 +204,7 @@ def parse_arguments() -> argparse.Namespace:
     # Verbose flag
     parser.add_argument(
         "--verbose",
+        "-v",
         action="store_true",
         help="Enable verbose output."
     )
@@ -219,14 +221,24 @@ def parse_arguments() -> argparse.Namespace:
     # Prompt selector
     parser.add_argument(
         "--prompt",
+        "-pr",
         metavar="PROMPT",
         help="Prompt selector for the processing mode. Optional for -process."
     )
     
     parser.add_argument(
         "--auto",
+        "-a",
         action="store_true",
         help="Fully automated processing mode, from input to export of batch proccess"
+    )
+
+    parser.add_argument(
+        "--custom",
+        "-c",
+        metavar="TXT_PATH",
+        type=str,
+        help='Path for custom .txt fields for csv'
     )
 
     args = parser.parse_args()
@@ -260,6 +272,8 @@ def main() -> None:
 
         if args.prompt:
             common.set_prompt(args.prompt)
+        if args.custom:
+            common.set_custom(True)
         if args.verbose:
             print(f"Processing model: {args.llm_model}, input path: {args.process}")
         process_path: Path = Path(args.process)
