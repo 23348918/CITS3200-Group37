@@ -37,14 +37,14 @@ VIDEO_EXTENSIONS: Tuple[str, ...] = (
 )
 
 PROMPT : str = (
-    "You are a road safety visual assistant installed in a car. Your task is to analyze images of road scenes and provide recommendations for safe driving. "
+    "You are a road safety visual assistant installed in a car. Your task is to analyze images of road scenes and provide recommendations for safe driving. Keep your response concise."
     "The user will provide you with an image or series of images to analyze."
     "For each image or sub-image, use the template format to explain the following in least words:\n\n"
     "1. Description: Describe what the car is currently doing. Then, describe the objects in the scene in few words, if any, focus on safety hazards, "
     "road signs, traffic lights, road lines/marks, pedestrians, obstacles. \n"
+    "3. Reasoning: Explain in only one sentence the reason for recommended action. Only talk about what is specifically about the scene. Avoid generic driving safety advice.\n"
     "2. Recommended Action: In few words, give suggestion as to what action should be taken by the driver. "
-    "Also include if driver can change lane, overtake or turn left/right.\n"
-    "3. Reason: Explain in few words the reason for recommended action.\n\n"
+    "Also include if driver can change lane, overtake or turn left/right.\n\n"
 )
 
 # TODO: Set up Logging (track response time, token count, errors etc.)

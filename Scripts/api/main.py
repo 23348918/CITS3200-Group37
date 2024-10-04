@@ -3,20 +3,21 @@ import os
 import sys
 from auth import authenticate
 from gpt_batch_operations import upload_batch_file, create_batch_file, list_batches, check_batch_process, export_batch_result, delete_exported_files
-from utils import get_save_path, generate_csv_output, json_to_dict, get_file_dict
+from utils import get_save_path, generate_csv_output, get_file_dict
 from pathlib import Path
 from typing import Dict, List, Callable
-from api_selector import chatgpt_request, gemini_request, claude_request, llama_request
+from api_selector import chatgpt_request, gemini_request, claude_request
 from create_batch import get_file_paths, generate_batch_file
 import common as common
-from claude_multi_request import parallel_process
+from claude_multi_request import parallel_process as claude_parallel_process
+from gemini_multi_request import parallel_process as gemini_parallel_process
+from pathlib import Path
 import time
 
 LLMS: Dict[str, Callable[[], None]] = {
     "chatgpt": chatgpt_request,
     "gemini": gemini_request,
-    "claude": claude_request,
-    "llama": llama_request
+    "claude": claude_request
 }
 
 def is_valid_file(file_path: Path, valid_extensions: list) -> bool:
@@ -105,17 +106,15 @@ def process(process_path: str, llm_model: str) -> None:
                 # Export the batch results
                 export_batch(batch_id, llm_model)
                 
-
         elif llm_model == "claude":
             file_dict = get_file_dict(process_path)
-            output_file = Path("../../Output/output_results.json")
-
-            parallel_process(file_dict, output_file)
-
-            result = json_to_dict(output_file)
-
+            result = parallel_process(file_dict)
             generate_csv_output(result, llm_model) 
             
+        elif llm_model == "gemini":
+            file_dict = get_file_dict(process_path)
+            results = gemini_parallel_process(file_dict)
+            generate_csv_output(results, "models/gemini-1.5-pro")
     else:
         print(f"The path {process_path} is not a valid file, directory or zip file.")
         sys.exit(1)
@@ -214,7 +213,7 @@ def parse_arguments() -> argparse.Namespace:
         "llm_model",
         type=str,
         nargs="?",
-        choices=["chatgpt", "gemini", "claude", "llama"],
+        choices=["chatgpt", "gemini", "claude"],
         help="Name of the LLM model to process image or video files. Required for process, check, and export."
     )
 
@@ -253,11 +252,11 @@ def main() -> None:
     """Main function to parse arguments, validate paths, run LLM model, list, check and export batch process."""
     args: argparse.Namespace = parse_arguments()
 
-    # TODO: Authenticate keys for all 3 models, program should run if the desired model key is in place.
-    if args.llm_model == "chatgpt":
-        common.chatgpt_client = authenticate("../../Private/ClientKeys/chatgpt-api.txt")
-    elif args.llm_model == "claude":
-        common.claude_client = authenticate("../../Private/ClientKeys/claude-api.txt")
+    script_dir = Path(__file__).parent
+    file_path = script_dir / ".." / ".." / "Private" / "ClientKeys" / f"{args.llm_model}-api.txt"
+    if not file_path.exists():
+        raise(f"{file_path} does not exist.") 
+    common.chatgpt_client = authenticate(str(file_path))
 
     if args.verbose:
         common.set_verbose(True)
