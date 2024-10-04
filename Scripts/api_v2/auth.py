@@ -1,12 +1,12 @@
 import sys
 from openai import OpenAI
-import os
-from anthropic import Anthropic  # Assuming you're using the Anthropic Python client for Claude.
+from anthropic import Anthropic
 import google.generativeai as genai
 from pathlib import Path
 import common
+from common import verbose_print
 
-def authenticate() -> object:
+def authenticate(model_name: str) -> object:
     """Authenticates with the appropriate service based on the path to the API key.
 
     Args:
@@ -16,7 +16,7 @@ def authenticate() -> object:
         An authenticated client object for the corresponding LLM (either OpenAI or Claude).
     """
     script_dir = Path(__file__).parent
-    file_path = script_dir / ".." / ".." / "Private" / "ClientKeys" / f"{common.model_name}-api.txt"
+    file_path = script_dir / ".." / ".." / "Private" / "ClientKeys" / f"{model_name}-api.txt"
     if not file_path.exists():
         raise(f"{file_path} does not exist.") 
     try:
@@ -26,36 +26,19 @@ def authenticate() -> object:
         print(f"An unexpected error occurred while reading the API key file: {e}")
         sys.exit(1)
 
-    # Determine the type of client based on the file name or path.
-    if "chatgpt" in file_path.lower():
-        try:
-            client: OpenAI = OpenAI(api_key=api_key)
-            common.chatgpt_client = client
-            print("Authenticated with OpenAI (ChatGPT) successfully.")
-            return client
-        except Exception as e:
-            print(f"Failed to authenticate OpenAI: {e}")
-            sys.exit(1)
-    
-    elif "claude" in file_path.lower():
-        try:
-            client = Anthropic(api_key=api_key)
-            print("Authenticated with Claude (Anthropic) successfully.")
-            return client
-        except Exception as e:
-            print(f"Failed to authenticate Claude: {e}")
-            sys.exit(1)
-
-    elif "gemini" in file_path.lower():
-        try:
-            genai.configure(api_key=api_key)
-            print("Authenticated with Gemini (Google) successfully.")
-            return
-        except Exception as e:
-            print(f"Failed to authenticate Gemini: {e}")
-            sys.exit(1)
-
-
-    else:
-        print(f"Unrecognized auth path: {file_path}. Please include 'chatgpt' or 'claude' in the file name.")
+    try:
+        match model_name:
+            case "chatgpt":
+                common.chatgpt_client = OpenAI(api_key=api_key)
+            case "claude":
+                common.claude_client = Anthropic(api_key=api_key)
+            case "gemini":
+                genai.configure(api_key=api_key)
+            case _:
+                print(f"Unrecognized auth path: {file_path}. Please include 'chatgpt' or 'claude' in the file name.")
+                sys.exit(1)
+    except Exception as e:
+        print(f"Authentication failed: {e}")
         sys.exit(1)
+
+    verbose_print(f"Authenicated with {model_name} successfully")

@@ -1,13 +1,11 @@
 import argparse
 import common
-from common import set_verbose, set_prompt, set_model
+from common import set_verbose, set_prompt
 from auth import authenticate
 from actions import process_model, check_model, export_model, list_models
 
-# Updated ACTIONS dictionary with argument passing logic
 ACTIONS: dict[str, callable] = {
     "prompt": lambda args: set_prompt(args.prompt),
-    # "model": lambda args: set_model(args.llm_model),
     "process": lambda args: process_model(args.llm_model, args.process, args.auto),  # Passes the file path
     "check": lambda args: check_model(args.check),        # Passes the batch ID
     "export": lambda args: export_model(args.export),     # Passes the batch ID
@@ -44,12 +42,9 @@ def parse_arguments() -> argparse.Namespace:
 
 def main():
     args: argparse.Namespace = parse_arguments()
-
-    # Set verbose mode if specified
     if args.verbose:
         set_verbose()
 
-    # Authenticate (example usage of the LLM model)
     authenticate(args.llm_model)
 
     # Execute corresponding action from the ACTIONS dictionary
