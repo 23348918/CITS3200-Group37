@@ -7,10 +7,35 @@ import re
 import google.generativeai as genai
 import time
 
-
-
 def chatgpt_request(file_path: Path) -> dict[str, str]:
-    pass 
+    is_video: bool = file_path.suffix in common.VIDEO_EXTENSIONS
+    if is_video:
+        encoded_file = encode_video(file_path)
+    else:
+        encoded_file = [encode_image(file_path)]
+    message = common.USER_PROMPT
+    for image in encoded_file:
+        message["content"].append({
+            "type": "image_url",
+            "image_url": {
+                "url": f"data:image/jpeg;base64,{image}"
+            }
+        })
+    messages = [{
+                "role": "system",
+                "content": common.PROMPT
+            }, message]
+    response: str = common.chatgpt_client.beta.chat.completions.parse(
+        model="gpt-4o-mini",
+        messages=messages,
+        response_format=common.AnalysisResponse
+    )
+    full_response = response.dict()
+    response_dict = full_response['choices'][0]['message']['parsed']
+    response_dict["model"] = "gpt-4o-mini"
+    response_dict["file_name"] = file_path.name
+    return response_dict
+
 
 def gemini_request(file_path: Path) -> dict[str, str]:
     is_video: bool = file_path.suffix in common.VIDEO_EXTENSIONS

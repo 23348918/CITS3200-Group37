@@ -17,12 +17,6 @@ REQUEST_FUNCTIONS: dict[str, Callable] = {
     "claude": claude_request
 }
 
-EXTENDED_MODEL_NAMES: dict[str, str] = {
-    "gemini": "models/gemini-1.5-pro",
-    "chatgpt": "chatgpt-4o-mini",
-    "claude": "claude-3-opus-20240229"
-}
-
 def process_model(model_name: str, file_path_str: str, auto: bool):
     verbose_print(f"Processing model: {model_name}")
     if model_name not in common.LLMS:
@@ -32,9 +26,11 @@ def process_model(model_name: str, file_path_str: str, auto: bool):
     if file_path.is_file() and file_path.suffix in common.VALID_EXTENSIONS:
         verbose_print(f"Sending {file_path} to {model_name}...")
         request_output: list[dict[str, Any]] = [REQUEST_FUNCTIONS[model_name](file_path)]
-    elif file_path.is_dir():
+    elif file_path.is_dir() and model_name in ["gemini", "claude"]:
         verbose_print(f"Sending {file_path} to {model_name}...")
         request_output: list[dict[str, Any]] = parallel_process(file_path, REQUEST_FUNCTIONS[model_name])
+    elif file_path.is_dir() and model_name == "chatgpt":
+        pass
     else:
         print(f"{file_path} is not a valid file or directory.")
         sys.exit(1)
@@ -106,7 +102,3 @@ def parallel_process(dir_path: Path, request_function: Callable) -> List[Dict[st
                 print(f'{label} generated an exception: {e}')  # Corrected to use label for error reporting
 
     return request_output
-
-
-
-

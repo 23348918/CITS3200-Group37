@@ -6,15 +6,18 @@ from pydantic import BaseModel
 
 # Global Variables
 chatgpt_client: OpenAI = None
-gemini_client = None
 claude_client: Anthropic = None
 verbose: bool = False
-model_name: str = None
 
-PROCESS_STATUS : list = ["completed", "failed",  " cancelled", "expired"]
-WAITING_TIMER: int = 10  # Waiting timer in seconds
+# Response Format
+class AnalysisResponse(BaseModel):
+    description: str
+    reasoning: str
+    action: str
 
 # Constants
+WAITING_TIMER: int = 10  # Waiting timer in seconds
+
 VALID_EXTENSIONS: Tuple[str, ...] = (
     '.jpg', '.jpeg', '.png', '.bmp', '.gif',
     '.tiff', '.tif', '.webp', '.heic', '.heif',
@@ -49,33 +52,6 @@ USER_PROMPT: json = {
         }
     ]
 }
-
-# TODO: Set up Logging (track response time, token count, errors etc.)
-
-# TODO: Possibly a config class to allow for batch processing option here instead of CLI
-
-class AnalysisResponse(BaseModel):
-    description: str
-    reasoning: str
-    action: str
-
-# Global Functions
-def set_verbose(value: bool = True) -> None:
-    global verbose
-    verbose = value
-    verbose_print(f"Verbose: {value}")
-
-def set_prompt(prompt: str) -> None:
-    global PROMPT
-    PROMPT = prompt
-    verbose_print(f"Custom Prompt: {prompt}")
-
-def set_model(model: str) -> None:
-    global model_name
-    model_name = model
-    verbose_print(f"Model: {model_name}")
-
-# common_args.py
 
 ARG_INFO = [
     # Positional argument for LLM model
@@ -130,6 +106,16 @@ ARG_INFO = [
     },  
 ]
 
+# Global Functions
+def set_verbose(value: bool = True) -> None:
+    global verbose
+    verbose = value
+    verbose_print(f"Verbose: {value}")
+
+def set_prompt(prompt: str) -> None:
+    global PROMPT
+    PROMPT = prompt
+    verbose_print(f"Custom Prompt: {prompt}")
 
 def verbose_print(*args, **kwargs) -> None:
     if verbose:
