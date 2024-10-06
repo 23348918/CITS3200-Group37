@@ -6,10 +6,13 @@ import re
 import google.generativeai as genai
 import time
 
-def chatgpt_request(model_name: str, file_path: Path, is_video: bool):
+
+
+def chatgpt_request(file_path: Path):
     pass 
 
-def gemini_request(model_name: str, file_path: Path, is_video: bool):
+def gemini_request(file_path: Path):
+    is_video: bool = file_path.suffix in common.VIDEO_EXTENSIONS
     if is_video:
         file = genai.upload_file(path=file_path)
         while file.state.name == "PROCESSING":
@@ -20,18 +23,19 @@ def gemini_request(model_name: str, file_path: Path, is_video: bool):
     else:
         file = Image.open(file_path)
 
-    model = genai.GenerativeModel(model_name=model_name)
+    model = genai.GenerativeModel(model_name="models/gemini-1.5-pro")
     response: dict[str, str] = model.generate_content(
         [common.PROMPT, file],
         generation_config=genai.GenerationConfig(
             response_mime_type="application/json",
             response_schema = list[common.AnalysisResponse],
-            max_output_tokens = 300)
+            max_output_tokens = 50)
             )
-    response_dict = response_to_dictionary(response.text, model_name)
-    return [response_dict]
+    response_dict = response_to_dictionary(response.text, "models/gemini-1.5-pro")
+    response_dict["file_name"] = file_path.name
+    return response_dict
 
-def claude_request(model_name: str, file_path: Path, is_video: bool):
+def claude_request(is_video: bool):
     pass
 
 def response_to_dictionary(response: str, model_name: str) -> dict[str, str]:

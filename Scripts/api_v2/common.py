@@ -25,6 +25,7 @@ VIDEO_EXTENSIONS: Tuple[str, ...] = (
 )
 
 LLMS: list[str] = ["chatgpt", "gemini", "claude"]
+MAX_THREAD_WORKERS: int = 10
 
 PROMPT : str = (
     "You are a road safety visual assistant installed in a car. Your task is to analyze images of road scenes and provide recommendations for safe driving. Keep your response concise."

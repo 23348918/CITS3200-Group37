@@ -6,6 +6,7 @@ from pathlib import Path
 import os
 import json
 import sys
+import common
 
 def check_file_size(file_path: str) -> bool:
     """
@@ -87,6 +88,7 @@ def generate_csv_output(data: Dict[str, Any], model_name: str, output_directory:
         model: The model name (e.g., 'claude').
         output_directory: Directory where the CSV file should be saved. If None, prompts user for location.
     """
+    print(data)
     
     if model_name.startswith('gpt-'):
         # Handle ChatGPT response format
@@ -103,7 +105,7 @@ def generate_csv_output(data: Dict[str, Any], model_name: str, output_directory:
     elif model_name.startswith('models/gemini-'):
         rows: List[Dict[str, Any]] = [
             {
-                'Image_ID': index,
+                'File_Name': single_data['file_name'],
                 'Model': model_name,
                 'Description': single_data['description'],
                 'Action': single_data['action'],
@@ -248,7 +250,7 @@ def get_file_dict(directory_path: Path) -> Dict[str, Path]:
     """
     file_dict = {}
     for file_path in directory_path.glob('*'):
-        if file_path.is_file():
+        if file_path.is_file() and file_path.suffix in common.VALID_EXTENSIONS:
             file_dict[file_path.name] = file_path
     return file_dict
 
