@@ -1,3 +1,4 @@
+import json
 from openai import OpenAI
 from typing import Tuple
 from anthropic import Anthropic
@@ -11,7 +12,7 @@ verbose: bool = False
 model_name: str = None
 
 PROCESS_STATUS : list = ["completed", "failed",  " cancelled", "expired"]
-WAITING_TIMER: int = 2  # Waiting timer in seconds
+WAITING_TIMER: int = 10  # Waiting timer in seconds
 
 # Constants
 VALID_EXTENSIONS: Tuple[str, ...] = (
@@ -26,17 +27,28 @@ VIDEO_EXTENSIONS: Tuple[str, ...] = (
 
 LLMS: list[str] = ["chatgpt", "gemini", "claude"]
 MAX_THREAD_WORKERS: int = 10
+MAX_OUTPUT_TOKENS: int = 100
 
 PROMPT : str = (
     "You are a road safety visual assistant installed in a car. Your task is to analyze images of road scenes and provide recommendations for safe driving. Keep your response concise."
     "The user will provide you with an image or series of images to analyze."
-    "For each image or sub-image, use the template format to explain the following in least words:\n\n"
-    "1. Description: Describe what the car is currently doing. Then, describe the objects in the scene in few words, if any, focus on safety hazards, "
-    "road signs, traffic lights, road lines/marks, pedestrians, obstacles. \n"
-    "3. Reasoning: Explain in only one sentence the reason for recommended action. Only talk about what is specifically about the scene. Avoid generic driving safety advice.\n"
-    "2. Recommended Action: In few words, give suggestion as to what action should be taken by the driver. "
-    "Also include if driver can change lane, overtake or turn left/right.\n\n"
+    "For each image or sub-image, use the template format to explain the following in least words:"
+    "1. description: Describe what the car is currently doing. Then, describe the objects in the scene in few words, if any, focus on safety hazards, "
+    "road signs, traffic lights, road lines/marks, pedestrians, obstacles."
+    "3. reasoning: Explain in only one sentence the reason for recommended action. Only talk about what is specifically about the scene. Avoid generic driving safety advice."
+    "2. action: In few words, give suggestion as to what action should be taken by the driver. "
+    "Also include if driver can change lane, overtake or turn left/right."
 )
+
+USER_PROMPT: json = {
+    "role": "user",
+    "content": [
+        {
+            "type": "text",
+            "text": "Analyze the following image and provide json output."
+        }
+    ]
+}
 
 # TODO: Set up Logging (track response time, token count, errors etc.)
 

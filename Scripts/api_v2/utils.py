@@ -1,12 +1,12 @@
-import pandas as pd
-from typing import List, Dict, Any, Optional
+from typing import List, Dict
 import tkinter as tk
 from tkinter import filedialog
 from pathlib import Path
 import os
-import json
 import sys
 import common
+import cv2
+import base64
 
 def check_file_size(file_path: str) -> bool:
     """
@@ -22,7 +22,7 @@ def check_file_size(file_path: str) -> bool:
     batch_file_size = os.path.getsize(file_path)
     file_limit = 99*1024*1024
     if batch_file_size >= file_limit:
-        print(f"Processing limit of 99MB reached. Please reduce number of files to be processed.\nTerminating....")
+        print("Processing limit of 99MB reached. Please reduce number of files to be processed.\nTerminating....")
         return False
     return True
 
@@ -79,101 +79,6 @@ def get_save_path(filename: str, directory: Path):
     
     return file_path
 
-def generate_csv_output(data: Dict[str, Any], model_name: str, output_directory: Optional[Path] = None) -> None:
-    """
-    Exports the parsed data to a CSV file, handling both single and multi-image Claude responses.
-
-    Args:
-        data: The data containing Claude API response, either a single response or multiple.
-        model: The model name (e.g., 'claude').
-        output_directory: Directory where the CSV file should be saved. If None, prompts user for location.
-    """
-    print(data)
-    
-    if model_name.startswith('gpt-'):
-        # Handle ChatGPT response format
-        rows = [
-            {
-                'Image_ID': index,
-                'Model': model_name,
-                'Description': choice['message']['parsed']['description'],
-                'Action': choice['message']['parsed']['action'],
-                'Reasoning': choice['message']['parsed']['reasoning']
-            }
-            for index, choice in enumerate(data.get('choices', []), start=1)
-        ]
-    elif model_name.startswith('models/gemini-'):
-        rows: List[Dict[str, Any]] = [
-            {
-                'File_Name': single_data['file_name'],
-                'Model': model_name,
-                'Description': single_data['description'],
-                'Action': single_data['action'],
-                'Reasoning': single_data['reasoning']
-            }
-            for index, single_data in enumerate(data)
-        ]
-    elif model_name.startswith('claude'):
-        # Check if data is a list (multi-image) or dict (single-image)
-        if isinstance(data, list):
-            # Multi-image case
-            for entry in data:
-                content = entry.get('content', [])
-                text = content[0].get('text', '') if content else ''
-                parts = text.split("\n\n")
-
-                description = parts[0].replace("Description: ", "").replace("1. ", "").strip() if len(parts) > 0 else ''
-                action = parts[1].replace("Recommended Action: ", "").replace("2. ", "").strip() if len(parts) > 1 else ''
-                reasoning = parts[2].replace("Reason: ", "").replace("3. ", "").strip() if len(parts) > 2 else ''
-
-                rows.append(
-                    {
-                        'Image_ID': entry.get('label', 'Unknown Image'),
-                        'Model': entry.get('model', ''),
-                        'Description': description,
-                        'Action': action,
-                        'Reasoning': reasoning
-                    }
-                )
-        elif isinstance(data, dict):
-            # Single-image case
-            content = data.get('content', [])
-            text = content[0].get('text', '') if content else ''
-            parts = text.split("\n\n")
-
-            description = parts[0].replace("Description: ", "").replace("1. ", "").strip() if len(parts) > 0 else ''
-            action = parts[1].replace("Recommended Action: ", "").replace("2. ", "").strip() if len(parts) > 1 else ''
-            reasoning = parts[2].replace("Reason: ", "").replace("3. ", "").strip() if len(parts) > 2 else ''
-
-            rows.append(
-                {
-                    'Image_ID': data.get('label', 'Unknown Image'),
-                    'Model': data.get('model', ''),
-                    'Description': description,
-                    'Action': action,
-                    'Reasoning': reasoning
-                }
-            )
-        else:
-            raise ValueError("Invalid data format for Claude model response.")
-
-    else:
-        raise ValueError("Unsupported model type")
-
-    # Create DataFrame from the rows
-    df: pd.DataFrame = pd.DataFrame(rows)
-
-    # Prompt the user for a save location or use the output directory
-    if output_directory is None:
-        csv_file_path = ask_save_location("result.csv")
-    else:
-        csv_file_path = output_directory / "result.csv"
-
-    # Save the DataFrame to CSV
-    df.to_csv(csv_file_path, index=False)
-    print(f"Results saved to {csv_file_path}")
-
-
 
 def select_file() -> str:
     """
@@ -188,56 +93,6 @@ def select_file() -> str:
 
     return file_path
 
-def result_to_dict(content: bytes) -> Dict[str, Any]:
-
-    """
-    Converts the binary content of a file to a dictionary.
-    
-    Args:
-        content (bytes): The binary content of the file.
-    
-    Returns:
-        Dict[str, Any]: A dictionary representation of the file content.
-    
-    Raises:
-        UnicodeDecodeError: If there is an error decoding the content.
-        json.JSONDecodeError: If there is an error parsing the content.
-    """
-    try:
-        content_str = content.decode('utf-8')
-        data_list = [json.loads(line) for line in content_str.splitlines() if line.strip()]
-    except (UnicodeDecodeError, json.JSONDecodeError) as e:
-        print(f"Error decoding or parsing the content: {e}")
-        return {}
-    
-    return(data_list)
-
-
-def save_batch_results_to_file(dict_response: dict, out_path: str) -> None:
-    """
-    Saves the batch results to a specified output path.
-
-    Args:
-        dict_response: The dictionary containing batch results to be saved.
-        out_path: The output path where the file will be saved.
-
-    Raises:
-        IOError, OSError: If there is an issue with writing the file.
-    """
-    try:
-        with open(out_path, 'w') as outfile:
-            json.dump(dict_response, outfile, indent=4)
-        
-        if os.path.isfile(out_path):
-            print(f"Batch results saved to {out_path}")
-            return True
-        else:
-            print(f"File was not created successfully. Batch result was not saved.")
-            return False
-    except (IOError, OSError) as e:
-        print(f"An error occurred while writing the file: {e}")
-        return False
-    
 def get_file_dict(directory_path: Path) -> Dict[str, Path]:
     """
     Generate a dictionary of file paths and labels from a directory.
@@ -253,8 +108,6 @@ def get_file_dict(directory_path: Path) -> Dict[str, Path]:
         if file_path.is_file() and file_path.suffix in common.VALID_EXTENSIONS:
             file_dict[file_path.name] = file_path
     return file_dict
-
-    
     
 def parse_claude_content(content: List[Dict[str, str]], field: str) -> str:
     """
@@ -282,3 +135,41 @@ def parse_claude_content(content: List[Dict[str, str]], field: str) -> str:
                 return part.replace(prefix, '').strip()
     
     return ''
+
+def get_media_type(file_path: Path) -> str:
+    """Determine the media type based on the file extension."""
+    ext = file_path.suffix.lower()
+    media_types = {
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.gif': 'image/gif',
+        '.bmp': 'image/bmp',
+        '.webp': 'image/webp'
+    }
+    if ext in media_types:
+        return media_types[ext]
+    raise ValueError(f"Unsupported file extension: {ext}")
+
+def encode_image(image_path: Path) -> str:
+    """Encodes an image stored locally into a base64 string."""
+    with image_path.open("rb") as image_file:
+        return base64.b64encode(image_file.read()).decode('utf-8')
+
+def encode_video(video_path: Path, frame_rate_divisor: int = 2) -> List[str]:
+    """Encodes a video stored locally into an array of base64 strings for frames."""
+    images: List[str] = []
+    cam = cv2.VideoCapture(str(video_path))
+    frame_rate = int(cam.get(cv2.CAP_PROP_FPS) / frame_rate_divisor)
+    
+    while True:
+        success, frame = cam.read()
+        if not success:
+            break
+        if len(images) % frame_rate == 0:
+            success, buffer = cv2.imencode('.jpg', frame)
+            if success:
+                images.append(base64.b64encode(buffer).decode('utf-8'))
+
+    cam.release()
+    return images

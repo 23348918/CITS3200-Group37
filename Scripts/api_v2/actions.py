@@ -3,11 +3,13 @@ from common import verbose_print
 import sys
 from pathlib import Path
 from llm_requests import chatgpt_request, gemini_request, claude_request
-from utils import generate_csv_output, get_file_dict
-from typing import Callable, Any, List, Dict
+from utils import get_file_dict, ask_save_location
+from typing import Callable, Any, List, Dict, Optional
 from tqdm import tqdm
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
+import pandas as pd
+
 
 REQUEST_FUNCTIONS: dict[str, Callable] = {
     "chatgpt": chatgpt_request,
@@ -36,8 +38,7 @@ def process_model(model_name: str, file_path_str: str, auto: bool):
     else:
         print(f"{file_path} is not a valid file or directory.")
         sys.exit(1)
-    
-    generate_csv_output(request_output, EXTENDED_MODEL_NAMES[model_name])
+    generate_csv_output(request_output)
 
 def check_model(): 
     pass
@@ -48,7 +49,32 @@ def export_model():
 def list_models():
     pass
 
+def generate_csv_output(data: Dict[str, Any], output_directory: Optional[Path] = None) -> None:
+    """
+    Exports the parsed data to a CSV file, handling both single and multi-image Claude responses.
 
+    Args:
+        data: The data containing Claude API response, either a single response or multiple.
+        model: The model name (e.g., 'claude').
+        output_directory: Directory where the CSV file should be saved. If None, prompts user for location.
+    """
+    rows: List[Dict[str, Any]] = [
+        {
+            'File_Name': single_data['file_name'],
+            'Model': single_data['model'],
+            'Description': single_data['description'],
+            'Reasoning': single_data['reasoning'],
+            'Action': single_data['action']
+        }
+        for single_data in data
+    ]
+    df: pd.DataFrame = pd.DataFrame(rows)
+    if output_directory is None:
+        csv_file_path = ask_save_location("result.csv")
+    else:
+        csv_file_path = output_directory / "result.csv"
+    df.to_csv(csv_file_path, index=False)
+    verbose_print(f"Results saved to {csv_file_path}")
 
 def parallel_process(dir_path: Path, request_function: Callable) -> List[Dict[str, Any]]:
     """
