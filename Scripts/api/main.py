@@ -108,7 +108,7 @@ def process(process_path: str, llm_model: str) -> None:
                 
         elif llm_model == "claude":
             file_dict = get_file_dict(process_path)
-            result = parallel_process(file_dict)
+            result = claude_parallel_process(file_dict)
             generate_csv_output(result, llm_model) 
             
         elif llm_model == "gemini":
