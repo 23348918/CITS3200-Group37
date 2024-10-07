@@ -16,7 +16,13 @@ REQUEST_FUNCTIONS: dict[str, Callable] = {
     "claude": claude_request
 }
 
-def process_model(model_name: str, file_path_str: str):
+def process_model(model_name: str, file_path_str: str) -> None:
+    """Process a given model and file path and generates a CSV output.
+    
+    Args:
+        model_name: The name of the model to process.
+        file_path_str: The path to the file or directory to process.
+    """
     verbose_print(f"Processing model: {model_name}")
     if model_name not in common.LLMS:
         print("Invalid model name")
@@ -38,13 +44,11 @@ def process_model(model_name: str, file_path_str: str):
     generate_csv_output(request_output)
 
 def generate_csv_output(data: dict[str, Any], output_directory: Optional[Path] = None) -> None:
-    """
-    Exports the parsed data to a CSV file, handling both single and multi-image Claude responses.
-
+    """Create a CSV file from the given data.
+    
     Args:
-        data: The data containing Claude API response, either a single response or multiple.
-        model: The model name (e.g., 'claude').
-        output_directory: Directory where the CSV file should be saved. If None, prompts user for location.
+        data: The data to convert to a CSV file.
+        output_directory: The directory to save the CSV file in. If None, prompts user for location
     """
     rows: list[dict[str, Any]] = [
         {
@@ -65,8 +69,7 @@ def generate_csv_output(data: dict[str, Any], output_directory: Optional[Path] =
     verbose_print(f"Results saved to {csv_file_path}")
 
 def parallel_process(dir_path: Path, request_function: Callable) -> list[dict[str, Any]]:
-    """
-    Process multiple files in parallel using a request function.
+    """Process multiple files in parallel using a request function.
 
     Args:
         dir_path: A Path object representing the directory containing files to process.
@@ -75,7 +78,7 @@ def parallel_process(dir_path: Path, request_function: Callable) -> list[dict[st
     Returns:
         A list of dictionaries containing results for each file.
     """
-    request_output = []
+    request_output: list = []
     
     # Create a dictionary of valid files to process
     file_dict: dict[str, Path] = get_file_dict(dir_path)
@@ -84,7 +87,7 @@ def parallel_process(dir_path: Path, request_function: Callable) -> list[dict[st
         future_to_file = {executor.submit(request_function, file): label for label, file in file_dict.items()}
         
         for future in tqdm(concurrent.futures.as_completed(future_to_file), total=len(future_to_file), desc="Processing items"):
-            label = future_to_file[future]  # Retrieve label for the current file
+            label: str = future_to_file[future]  # Retrieve label for the current file
             try:
                 result = future.result()
                 if result is not None:

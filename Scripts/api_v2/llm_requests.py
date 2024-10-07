@@ -8,12 +8,19 @@ import google.generativeai as genai
 import time
 
 def chatgpt_request(file_path: Path) -> dict[str, str]:
+    """Request for a single file to the ChatGPT API.
+    
+    Args:
+        file_path: Path to the image or video file.
+    
+    Returns:
+        The analysis response as a dictionary."""
     is_video: bool = file_path.suffix in common.VIDEO_EXTENSIONS
     if is_video:
-        encoded_file = encode_video(file_path)
+        encoded_file: list[str] = encode_video(file_path)
     else:
-        encoded_file = [encode_image(file_path)]
-    message = common.USER_PROMPT
+        encoded_file: list[str] = [encode_image(file_path)]
+    message: str = common.USER_PROMPT
     for image in encoded_file:
         message["content"].append({
             "type": "image_url",
@@ -30,14 +37,21 @@ def chatgpt_request(file_path: Path) -> dict[str, str]:
         messages=messages,
         response_format=common.AnalysisResponse
     )
-    full_response = response.dict()
-    response_dict = full_response['choices'][0]['message']['parsed']
+    full_response: dict = response.dict()
+    response_dict: dict = full_response['choices'][0]['message']['parsed']
     response_dict["model"] = "gpt-4o-mini"
     response_dict["file_name"] = file_path.name
     return response_dict
 
 
 def gemini_request(file_path: Path) -> dict[str, str]:
+    """Request for a single file to the gemini API.
+    
+    Args:
+        file_path: Path to the image or video file.
+    
+    Returns:
+        The analysis response as a dictionary."""
     is_video: bool = file_path.suffix in common.VIDEO_EXTENSIONS
     if is_video:
         file = genai.upload_file(path=file_path)
@@ -57,19 +71,26 @@ def gemini_request(file_path: Path) -> dict[str, str]:
             response_schema = list[common.AnalysisResponse],
             max_output_tokens = common.MAX_OUTPUT_TOKENS)
             )
-    response_dict = response_to_dictionary(response.text, "models/gemini-1.5-pro")
+    response_dict: dict = response_to_dictionary(response.text, "models/gemini-1.5-pro")
     response_dict["file_name"] = file_path.name
     return response_dict
 
 def claude_request(file_path: Path) -> dict[str, str]:
+    """Request for a single file to the Claude API.
+    
+    Args:
+        file_path: Path to the image or video file.
+        
+    Returns:
+        The analysis response as a dictionary."""
     is_video: bool = file_path.suffix in common.VIDEO_EXTENSIONS
     if is_video:
         media_type: str = "image/jpeg"  # encode video always makes a jpeg
-        encoded_file = encode_video(file_path)
+        encoded_file: str = encode_video(file_path)
     else:
         media_type: str = get_media_type(file_path)
-        encoded_file = [encode_image(file_path)]
-    message = common.USER_PROMPT
+        encoded_file: str = [encode_image(file_path)]
+    message: str = common.USER_PROMPT
     for image in encoded_file:
         message["content"].append({
             "type": "image",
@@ -85,12 +106,20 @@ def claude_request(file_path: Path) -> dict[str, str]:
         system=common.PROMPT,
         messages=[message]
     )
-    full_response = response.dict()
-    response_dict = response_to_dictionary(full_response['content'][0]['text'], "models/gemini-1.5-pro")
+    full_response: dict = response.dict()
+    response_dict: dict = response_to_dictionary(full_response['content'][0]['text'], "models/gemini-1.5-pro")
     response_dict["file_name"] = file_path.name
     return response_dict
 
 def response_to_dictionary(response: str, model_name: str) -> dict[str, str]:
+    """Converts the response from the API to a dictionary. Will contain empty columns if unfinished or errored.
+    
+    Args:
+        response: The response from the API.
+        model_name: The name of the model used for the analysis.
+        
+    Returns:
+        The response as a dictionary."""
     response_dictionary: dict[str, str] = {"model": model_name}
     for json_section in common.AnalysisResponse.model_fields.keys():
         match: re.Match[str] = re.search(f'"{json_section}":\\s*"([^"]*)', response)

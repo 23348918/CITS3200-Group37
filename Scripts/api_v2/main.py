@@ -16,7 +16,11 @@ ACTIONS: dict[str, callable] = {
 }
 
 def parse_arguments() -> argparse.Namespace:
-    """Parse the arguments from the command line."""
+    """Parse the arguments from the command line.
+    
+    Returns:
+        The parsed arguments.
+    """
     
     parser = argparse.ArgumentParser(
         description="CLI for LLM models processing and batch operations."
@@ -26,7 +30,7 @@ def parse_arguments() -> argparse.Namespace:
 
     # Dynamically add arguments based on common.ARG_INFO
     for arg in common.ARG_INFO:
-        kwargs = {k: v for k, v in arg.items() if k not in ("group", "flags", "name")}
+        kwargs: dict = {k: v for k, v in arg.items() if k not in ("group", "flags", "name")}
         
         if arg.get("group") == "exclusive":
             exclusive_group.add_argument(*arg["flags"], **kwargs)
@@ -44,6 +48,7 @@ def parse_arguments() -> argparse.Namespace:
     return args
 
 def main():
+    """Main function that redirects to relevent functions based on the arguments."""
     args: argparse.Namespace = parse_arguments()
     if args.llm_model != "chatgpt" and args.process != "process":
         print("Only chatgpt model is supported for batch processing.")
