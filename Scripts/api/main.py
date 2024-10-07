@@ -50,7 +50,7 @@ def parse_arguments() -> argparse.Namespace:
 def main():
     """Main function that redirects to relevent functions based on the arguments."""
     args: argparse.Namespace = parse_arguments()
-    if args.llm_model != "chatgpt" and args.process != "process":
+    if args.llm_model != "chatgpt" and args.process in None:
         print("Only chatgpt model is supported for batch processing.")
         sys.exit(1)
 

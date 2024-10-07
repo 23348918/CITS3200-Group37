@@ -107,7 +107,7 @@ def claude_request(file_path: Path) -> dict[str, str]:
         messages=[message]
     )
     full_response: dict = response.dict()
-    response_dict: dict = response_to_dictionary(full_response['content'][0]['text'], "models/gemini-1.5-pro")
+    response_dict: dict = response_to_dictionary(full_response['content'][0]['text'], "models/claude-3-opus-20240229")
     response_dict["file_name"] = file_path.name
     return response_dict
 
