@@ -10,6 +10,15 @@ import json
 import sys
 
 def create_dynamic_response_model(custom_str: str) -> BaseModel:
+    """
+    Creates a dynamic class for custom responses
+
+    Args:
+        custom_str (str): String containing each of the custom prompts
+
+    Return:
+        BaseModel: custom class of the DynamicAnalysisResponse model
+    """
 
     if custom_str is None:
         return AnalysisResponse
@@ -31,6 +40,15 @@ def create_dynamic_response_model(custom_str: str) -> BaseModel:
     return DynamicAnalysisResponse
 
 def extract_dynamic_fields(parts: List[str]) -> Dict[str, str]:
+        """
+        Uses the custom parts of LLM response to append to the response dictionary
+
+        Args:
+            parts: custom responses from the LLM model
+
+        Returns:
+            dict: containing each of the custom values
+        """
         dynamic_fields = {}
         for part in parts[3:]:
             if ": " in part:
@@ -127,38 +145,82 @@ def get_save_path(filename: str, directory: Path):
     
     return file_path
 
-def generate_csv_output(data: Dict[str, Any], model_name: str, output_directory: Optional[Path] = None) -> None:
+def generate_csv_output(data: Dict[str, Any], model_name: str, filename: str, output_directory: Optional[Path] = None) -> None:
     """
-    Exports the parsed data to a CSV file, handling both single and multi-image Claude responses.
+    Exports the parsed data to a CSV file, handling both single and multi-image LLM responses.
 
     Args:
-        data: The data containing Claude API response, either a single response or multiple.
-        model: The model name (e.g., 'claude').
+        data: The data containing LLM API response, either a single response or multiple.
+        model_name: The model name (e.g., 'claude').
+        filename: name of the file or batch being processed
         output_directory: Directory where the CSV file should be saved. If None, prompts user for location.
     """
 
     if model_name.startswith('chatgpt'):
         # Handle ChatGPT response format
         rows = []
-        for index, choice in enumerate(data.get('choices', []), start=1):
-            parsed_data = choice['message']['parsed']
 
-            # Build row with static fields
-            row = {
-                'Image_ID': index,
-                'Model': model_name,
-                'Description': parsed_data.get('description', ''),
-                'Action': parsed_data.get('action', ''),
-                'Reasoning': parsed_data.get('reasoning', ''),
-            }
+        if isinstance(data, dict):
+            for index, choice in enumerate(data.get('choices', []), start=1):
+                parsed_data = choice['message']['parsed']
 
-            for key, value in parsed_data.items():
-                if key not in row:
-                    row[key.capitalize()] = value
+                # Build row with static fields
+                row = {
+                    'Image_ID': index,
+                    'Model': model_name,
+                    'Description': parsed_data.get('description', ''),
+                    'Action': parsed_data.get('action', ''),
+                    'Reasoning': parsed_data.get('reasoning', ''),
+                }
 
-            rows.append(row)
+                for key, value in parsed_data.items():
+                    if key not in row:
+                        row[key.capitalize()] = value
 
-    elif model_name.startswith('models/gemini-'):
+                rows.append(row)
+
+        elif isinstance(data, list):
+            for index, item in enumerate(data, start=1):
+                # Access the message content
+                message_content = item['response']['body']['choices'][0]['message']['content']
+
+                # Initialize parsed_data as a dictionary
+                parsed_data = {} 
+
+                # Split content into lines
+                lines = message_content.split('\n\n')
+
+                # Parse each line to extract relevant details
+                for line in lines:
+                    # Remove asterisks from the line
+                    cleaned_line = line.replace('**', '').strip()
+
+                    # Split the cleaned line into key and value
+                    if ':' in cleaned_line:
+                        key, value = cleaned_line.split(':', 1)  # Split at the first colon
+                        parsed_data[key.strip()] = value.strip()  # Store in the dictionary
+
+                # Build the initial row with static fields format
+                row = {
+                    'Image_ID': index,
+                    'Model': model_name,
+                    'Description': parsed_data.get('Description', ''),
+                    'Action': parsed_data.get('Action', ''),
+                    'Reasoning': parsed_data.get('Reasoning', ''),
+                }
+
+                # Add any additional parsed data dynamically
+                for key, value in parsed_data.items():
+                    if key not in row:
+                        row[key] = value  # Add the key-value pair directly
+
+                rows.append(row)
+
+        else:
+            raise ValueError("Invalid data format for chatgpt model response.")
+
+
+    elif model_name.startswith('gemini-'):
         rows = []
         for index, single_data in enumerate(data, start=1):
             row = {
@@ -184,8 +246,8 @@ def generate_csv_output(data: Dict[str, Any], model_name: str, output_directory:
                 parts = text.split("\n\n")
 
                 description = parts[0].replace("Description: ", "").replace("1. ", "").strip() if len(parts) > 0 else ''
-                action = parts[1].replace("Recommended Action: ", "").replace("2. ", "").strip() if len(parts) > 1 else ''
-                reasoning = parts[2].replace("Reason: ", "").replace("3. ", "").strip() if len(parts) > 2 else ''
+                action = parts[1].replace("Action: ", "").replace("2. ", "").strip() if len(parts) > 1 else ''
+                reasoning = parts[2].replace("Reasoning: ", "").replace("3. ", "").strip() if len(parts) > 2 else ''
                 
                 dynamic_fields = extract_dynamic_fields(parts)
 
@@ -206,8 +268,8 @@ def generate_csv_output(data: Dict[str, Any], model_name: str, output_directory:
             parts = text.split("\n\n")
 
             description = parts[0].replace("Description: ", "").replace("1. ", "").strip() if len(parts) > 0 else ''
-            action = parts[1].replace("Recommended Action: ", "").replace("2. ", "").strip() if len(parts) > 1 else ''
-            reasoning = parts[2].replace("Reason: ", "").replace("3. ", "").strip() if len(parts) > 2 else ''
+            action = parts[1].replace("Action: ", "").replace("2. ", "").strip() if len(parts) > 1 else ''
+            reasoning = parts[2].replace("Reasoning: ", "").replace("3. ", "").strip() if len(parts) > 2 else ''
 
             dynamic_fields = extract_dynamic_fields(parts)
 
@@ -234,7 +296,8 @@ def generate_csv_output(data: Dict[str, Any], model_name: str, output_directory:
     if output_directory is None:
         csv_file_path = ask_save_location("result.csv")
     else:
-        csv_file_path = output_directory / "result.csv"
+        output = f"{model_name}-{filename}.csv"
+        csv_file_path = output_directory / output
 
     # Save the DataFrame to CSV
     df.to_csv(csv_file_path, index=False)

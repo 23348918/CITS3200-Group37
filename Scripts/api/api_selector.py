@@ -23,8 +23,11 @@ def chatgpt_request(process_path: Path) -> None:
         result_dict: Dict[str, str] = gpt_analyse_image(process_path)
     if common.verbose:
         print(f"Received result from chatgpt-4o-mini: {result_dict}")
-        
-    generate_csv_output(result_dict, "chatgpt-4o-mini")
+
+    filename = process_path.name
+    output_directory = Path("../../Output/")
+    
+    generate_csv_output(result_dict, "chatgpt-4o-mini", filename, output_directory)
 
     if common.verbose:
         print("Media has been successfully exported to CSV.")
@@ -46,7 +49,10 @@ def gemini_request(process_path: Path) -> None:
     if common.verbose:
         print(f"Received result from gemini-1.5-pro: {result_dict}")
 
-    generate_csv_output([result_dict], "models/gemini-1.5-pro")
+    filename = process_path.name
+    output_directory = Path("../../Output/")
+
+    generate_csv_output([result_dict], "gemini-1.5-pro", filename, output_directory)
     if common.verbose:
         print("Media has been successfully exported to CSV.")
 
@@ -72,8 +78,11 @@ def claude_request(process_path: Path) -> None:
     
     if common.verbose:
         print(f"Received result from Claude-1: {result_dict}") 
-        
-    generate_csv_output(result_dict, "claude")
+    
+    filename = process_path.name
+    output_directory = Path("../../Output/")
+
+    generate_csv_output(result_dict, "claude", filename, output_directory)
     
     if common.verbose:
         print("Media has been successfully exported to CSV.")

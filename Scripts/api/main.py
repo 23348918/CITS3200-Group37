@@ -106,14 +106,18 @@ def process(process_path: str, llm_model: str) -> None:
                 export_batch(batch_id, llm_model)
                 
         elif llm_model == "claude":
+            filename = process_path.name
+            output_directory = Path("../../Output/")
             file_dict = get_file_dict(process_path)
             result = claude_parallel_process(file_dict)
-            generate_csv_output(result, llm_model) 
+            generate_csv_output(result, llm_model, filename, output_directory) 
             
         elif llm_model == "gemini":
+            filename = process_path.name
+            output_directory = Path("../../Output/")
             file_dict = get_file_dict(process_path)
             results = gemini_parallel_process(file_dict)
-            generate_csv_output(results, "models/gemini-1.5-pro")
+            generate_csv_output(results, "gemini-1.5-pro", filename, output_directory)
     else:
         print(f"The path {process_path} is not a valid file, directory or zip file.")
         sys.exit(1)
@@ -252,7 +256,6 @@ def main() -> None:
     file_path = script_dir / ".." / ".." / "Private" / "ClientKeys" / f"{args.llm_model}-api.txt"
     if not file_path.exists():
         raise FileNotFoundError(f"{file_path} does not exist.")
-    # TODO: Fix double auth 
     common.chatgpt_client = authenticate(str(file_path))
     common.claude_client = authenticate(str(file_path))
 
@@ -261,7 +264,6 @@ def main() -> None:
         print("Verbose mode enabled.")
         
     # Case 1: User would like to process image or directory
-    # TODO: Implement video processing functionality here
     if args.process:
         common.auto = args.auto
 

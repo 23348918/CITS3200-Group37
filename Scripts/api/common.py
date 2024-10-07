@@ -43,8 +43,8 @@ PROMPT : str = (
     "For each image or sub-image, use the template format to explain the following in least words:\n\n"
     "Description: Describe what the car is currently doing. Then, describe the objects in the scene in few words, if any, focus on safety hazards, "
     "road signs, traffic lights, road lines/marks, pedestrians, obstacles. \n"
-    "Recommended Action: In few words, give suggestion as to what action should be taken by the driver. \n"
-    "Reason: Explain in only one sentence the reason for recommended action. Only talk about what is specifically about the scene. Avoid generic driving safety advice.\n"
+    "Action: In few words, give suggestion as to what action should be taken by the driver. \n"
+    "Reasoning: Explain in only one sentence the reason for recommended action. Only talk about what is specifically about the scene. Avoid generic driving safety advice.\n"
 )
 
 # TODO: Set up Logging (track response time, token count, errors etc.)

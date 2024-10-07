@@ -1,7 +1,8 @@
 from openai import OpenAI
-from utils import result_to_dict, save_batch_results_to_file, check_file_size
+from utils import result_to_dict, save_batch_results_to_file, check_file_size, generate_csv_output
 import openai
 import common
+from pathlib import Path
 
 def upload_batch_file(client: OpenAI, file_path: str) -> OpenAI:
     """
@@ -38,7 +39,6 @@ def upload_batch_file(client: OpenAI, file_path: str) -> OpenAI:
     except openai.APIError as e:
         print(f"Error uploading batch file: {e}")
         raise
-
 
 def create_batch_file(client: OpenAI, upload_batch: OpenAI) -> OpenAI:
     """
@@ -161,13 +161,11 @@ def export_batch_result(client: OpenAI, batch_id: str, out_path: str) -> None:
     
     result: bytes = client.files.content(output_file_id).read()
     dict_response: dict = result_to_dict(result)
-     # Return False if failed to retrieve batch results
+    print(dict_response)
     
-    #TODO: Instead of saving to json, extract data and save to csv. 
-    # Modift and chekc function save_batch_results_to_file in utils.py
-    if save_batch_results_to_file(dict_response, out_path): # if true, then successfully saved
-        delete_exported_files(client, batch_results)
-    # return True
+    output_directory = Path("../../Output/")
+    generate_csv_output(dict_response, "chatgpt-4o-mini", batch_id, output_directory)
+
 
 
 
