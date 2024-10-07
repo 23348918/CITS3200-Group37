@@ -116,16 +116,25 @@ def generate_csv_output(data: Dict[str, Any], model_name: str, output_directory:
 
     if model_name.startswith('chatgpt'):
         # Handle ChatGPT response format
-        rows = [
-            {
+        rows = []
+        for index, choice in enumerate(data.get('choices', []), start=1):
+            parsed_data = choice['message']['parsed']
+
+            # Build row with static fields
+            row = {
                 'Image_ID': index,
                 'Model': model_name,
-                'Description': choice['message']['parsed']['description'],
-                'Action': choice['message']['parsed']['action'],
-                'Reasoning': choice['message']['parsed']['reasoning']
+                'Description': parsed_data.get('description', ''),
+                'Action': parsed_data.get('action', ''),
+                'Reasoning': parsed_data.get('reasoning', ''),
             }
-            for index, choice in enumerate(data.get('choices', []), start=1)
-        ]
+
+            for key, value in parsed_data.items():
+                if key not in row:
+                    row[key.capitalize()] = value
+
+            rows.append(row)
+
     elif model_name.startswith('models/gemini-'):
         rows: List[Dict[str, Any]] = [
             {

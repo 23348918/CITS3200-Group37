@@ -1,7 +1,7 @@
 from openai import OpenAI
 from typing import Tuple, Optional
 from anthropic import Anthropic
-from pydantic import BaseModel
+from pydantic import BaseModel, create_model
 
 # Global Variables
 chatgpt_client: OpenAI = None
@@ -9,7 +9,7 @@ gemini_client = None
 claude_client = Anthropic = None
 verbose: bool = False
 auto: bool = False
-is_custom: bool = False
+custom_str: str = None
 prompt: str = None
 
 # Global Classes
@@ -47,12 +47,23 @@ PROMPT : str = (
 
 # TODO: Possibly a config class to allow for batch processing option here instead of CLI
 
-# # Global Functions
-# def append_fields_from_custom_str(custom_str: str) -> None:
-#     lines = custom_str.splitlines()
-#     for line in lines:
-#         first_word = line.split()[0]
-#         setattr(AnalysisResponse, first_word.lower(), (str, ...))
+# Global Functions
+def create_dynamic_response_model(custom_str: str) -> BaseModel:
+    dynamic_fields = {}
+    
+    lines = custom_str.splitlines()
+    for line in lines:
+        if ": " in line:
+            first_word = line.split(": ")[0].strip()
+            dynamic_fields[first_word.lower()] = (str, ...)
+    
+    DynamicAnalysisResponse = create_model(
+        'DynamicAnalysisResponse',  # Name of the new model
+        **dynamic_fields,           # Unpack dynamic fields
+        __base__=AnalysisResponse    # Inherit from the base class
+    )
+    
+    return DynamicAnalysisResponse
 
 def append_prompt(custom_str: str = None) -> None:
     global prompt
@@ -71,6 +82,6 @@ def set_prompt(prompt: str) -> None:
     if verbose:
         print(f"Custom Prompt: {prompt}")
 
-def set_custom(value: bool) -> None:
-    global is_custom
-    is_custom = value
+def set_custom(string: str) -> None:
+    global custom_str
+    custom_str = string

@@ -252,7 +252,8 @@ def main() -> None:
     script_dir = Path(__file__).parent
     file_path = script_dir / ".." / ".." / "Private" / "ClientKeys" / f"{args.llm_model}-api.txt"
     if not file_path.exists():
-        raise FileNotFoundError(f"{file_path} does not exist.") 
+        raise FileNotFoundError(f"{file_path} does not exist.")
+    # TODO: Fix double auth 
     common.chatgpt_client = authenticate(str(file_path))
     common.claude_client = authenticate(str(file_path))
 
@@ -272,7 +273,9 @@ def main() -> None:
             common.set_prompt(args.prompt)
         if args.custom:
             custom_str = read_customs(args.custom)
+            common.set_custom(custom_str)
             common.append_prompt(custom_str)
+            common.create_dynamic_response_model(custom_str)
             if args.verbose:
                 print(custom_str)
         else:
