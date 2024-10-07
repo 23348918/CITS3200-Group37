@@ -66,7 +66,7 @@ def analyse_image(file_path: str, model: Optional[str] = "gpt-4o-mini") -> Dict[
         messages=[
             {
                 "role": "system",
-                "content": common.PROMPT
+                "content": common.prompt
             },
             {
                 "role": "user",
@@ -106,7 +106,7 @@ def analyse_video(file_path: str, model: Optional[str] = "gpt-4o-mini") -> Dict[
     model_messages = [
             {
                 "role": "system",
-                "content": common.PROMPT
+                "content": common.prompt
             },
             {
                 "role": "user",

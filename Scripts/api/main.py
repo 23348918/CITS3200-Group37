@@ -3,7 +3,7 @@ import os
 import sys
 from auth import authenticate
 from gpt_batch_operations import upload_batch_file, create_batch_file, list_batches, check_batch_process, export_batch_result, delete_exported_files
-from utils import get_save_path, generate_csv_output, get_file_dict
+from utils import get_save_path, generate_csv_output, get_file_dict, read_customs
 from pathlib import Path
 from typing import Dict, List, Callable
 from api_selector import chatgpt_request, gemini_request, claude_request
@@ -153,7 +153,6 @@ def check_batch(batch_id: str, llm_model: str) -> None:
 
         return (status,status_message)
 
-
 def export_batch(batch_id: str, llm_model: str) -> None:
     """Export the batch for the given batch id and llm model
     
@@ -170,8 +169,6 @@ def export_batch(batch_id: str, llm_model: str) -> None:
     location = get_save_path(filename, directory)
 
     export_batch_result(common.chatgpt_client, batch_id, location)
-        
-    
     
 def parse_arguments() -> argparse.Namespace:
     """Parse the arguments from the command line
@@ -255,8 +252,9 @@ def main() -> None:
     script_dir = Path(__file__).parent
     file_path = script_dir / ".." / ".." / "Private" / "ClientKeys" / f"{args.llm_model}-api.txt"
     if not file_path.exists():
-        raise(f"{file_path} does not exist.") 
+        raise FileNotFoundError(f"{file_path} does not exist.") 
     common.chatgpt_client = authenticate(str(file_path))
+    common.claude_client = authenticate(str(file_path))
 
     if args.verbose:
         common.set_verbose(True)
@@ -269,12 +267,19 @@ def main() -> None:
     if args.process:
         common.auto = args.auto
 
+
         if args.prompt:
             common.set_prompt(args.prompt)
         if args.custom:
-            common.set_custom(True)
+            custom_str = read_customs(args.custom)
+            common.append_prompt(custom_str)
+            if args.verbose:
+                print(custom_str)
+        else:
+            common.append_prompt()
         if args.verbose:
             print(f"Processing model: {args.llm_model}, input path: {args.process}")
+            print(f"Prompt: {common.prompt}")
         process_path: Path = Path(args.process)
         process(process_path, args.llm_model)
 

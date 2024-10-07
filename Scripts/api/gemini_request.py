@@ -26,7 +26,7 @@ def analyse_image(file_path: str, model_name: Optional[str] = "models/gemini-1.5
     img : Image = Image.open(file_path)
     model = genai.GenerativeModel(model_name=model_name)
     response: Dict[str, str] = model.generate_content(
-            [common.PROMPT, img],
+            [common.prompt, img],
             generation_config=genai.GenerationConfig(
                 response_mime_type="application/json",
                 response_schema = list[AnalysisResponse],
@@ -68,7 +68,7 @@ def analyse_video(file_path: str, model_name: Optional[str] = "models/gemini-1.5
         raise ValueError(video_file.state.name)
     model = genai.GenerativeModel(model_name=model_name)
     response: Dict[str, str] = model.generate_content(
-            [common.PROMPT, video_file],
+            [common.prompt, video_file],
             generation_config=genai.GenerationConfig(
                 response_mime_type="application/json",
                 response_schema = list[AnalysisResponse],

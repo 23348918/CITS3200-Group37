@@ -66,7 +66,7 @@ def analyse_image(file_path: Path) -> Dict[str, str]:
     response = common.claude_client.messages.create(
         model="claude-3-opus-20240229",
         max_tokens=1000,
-        system=common.PROMPT,
+        system=common.prompt,
         messages=[
             {
                 "role": "user",
@@ -137,7 +137,7 @@ def analyse_video(file_path: Path, model: Optional[str] = "claude-3-opus-2024022
         response = common.claude_client.messages.create(
             model=model,
             max_tokens=2000,  # Adjust token limit for large number of frames
-            system=common.PROMPT,  # Top-level system parameter
+            system=common.prompt,  # Top-level system parameter
             messages=model_messages  # Only user role messages
         )
 

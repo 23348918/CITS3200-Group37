@@ -7,6 +7,32 @@ import os
 import json
 import sys
 
+def extract_dynamic_fields(parts: List[str]) -> Dict[str, str]:
+        dynamic_fields = {}
+        for part in parts[3:]:
+            if ": " in part:
+                key, value = part.split(": ", 1)
+                dynamic_fields[key.strip()] = value.strip()
+        return dynamic_fields
+
+def read_customs(file_path: str):
+    """
+    Reads custom inputs from cli to be used for csv output
+
+    Args:
+        file_path (str): The path to the txt file that represents custom inputs.
+
+    Returns:
+        str: formatted string of content
+
+    """
+    if not file_path.lower().endswith('.txt'):
+        raise ValueError("The file must be of type .txt")
+
+    with open(file_path, 'r') as file:
+        contents = file.read()
+    return contents
+
 def check_file_size(file_path: str) -> bool:
     """
     Checks if the size of the file at the given path exceeds the limit of 99MB.
@@ -112,6 +138,7 @@ def generate_csv_output(data: Dict[str, Any], model_name: str, output_directory:
             for index, single_data in enumerate(data)
         ]
     elif model_name.startswith('claude'):
+        rows: List[Dict[str, Any]] = []
         # Check if data is a list (multi-image) or dict (single-image)
         if isinstance(data, list):
             # Multi-image case
@@ -123,16 +150,19 @@ def generate_csv_output(data: Dict[str, Any], model_name: str, output_directory:
                 description = parts[0].replace("Description: ", "").replace("1. ", "").strip() if len(parts) > 0 else ''
                 action = parts[1].replace("Recommended Action: ", "").replace("2. ", "").strip() if len(parts) > 1 else ''
                 reasoning = parts[2].replace("Reason: ", "").replace("3. ", "").strip() if len(parts) > 2 else ''
+                
+                dynamic_fields = extract_dynamic_fields(parts)
 
-                rows.append(
-                    {
-                        'Image_ID': entry.get('label', 'Unknown Image'),
-                        'Model': entry.get('model', ''),
-                        'Description': description,
-                        'Action': action,
-                        'Reasoning': reasoning
-                    }
-                )
+                row = {
+                    'Image_ID': entry.get('label', 'Unknown Image'),
+                    'Model': entry.get('model', ''),
+                    'Description': description,
+                    'Action': action,
+                    'Reasoning': reasoning
+                }
+                row.update(dynamic_fields)
+                rows.append(row)
+
         elif isinstance(data, dict):
             # Single-image case
             content = data.get('content', [])
@@ -143,15 +173,18 @@ def generate_csv_output(data: Dict[str, Any], model_name: str, output_directory:
             action = parts[1].replace("Recommended Action: ", "").replace("2. ", "").strip() if len(parts) > 1 else ''
             reasoning = parts[2].replace("Reason: ", "").replace("3. ", "").strip() if len(parts) > 2 else ''
 
-            rows.append(
-                {
-                    'Image_ID': data.get('label', 'Unknown Image'),
-                    'Model': data.get('model', ''),
-                    'Description': description,
-                    'Action': action,
-                    'Reasoning': reasoning
-                }
-            )
+            dynamic_fields = extract_dynamic_fields(parts)
+
+            row = {
+                'Image_ID': data.get('label', 'Unknown Image'),
+                'Model': data.get('model', ''),
+                'Description': description,
+                'Action': action,
+                'Reasoning': reasoning
+            }
+            row.update(dynamic_fields)
+            rows.append(row)
+            
         else:
             raise ValueError("Invalid data format for Claude model response.")
 
