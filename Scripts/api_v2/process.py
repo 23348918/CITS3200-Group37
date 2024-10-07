@@ -9,8 +9,6 @@ from tqdm import tqdm
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
 import pandas as pd
-import time
-
 
 REQUEST_FUNCTIONS: dict[str, Callable] = {
     "chatgpt": chatgpt_request,
@@ -18,7 +16,7 @@ REQUEST_FUNCTIONS: dict[str, Callable] = {
     "claude": claude_request
 }
 
-def process_model(model_name: str, file_path_str: str, auto: bool):
+def process_model(model_name: str, file_path_str: str):
     verbose_print(f"Processing model: {model_name}")
     if model_name not in common.LLMS:
         print("Invalid model name")
@@ -38,32 +36,6 @@ def process_model(model_name: str, file_path_str: str, auto: bool):
         sys.exit(1)
 
     generate_csv_output(request_output)
-
-def process_batch(model_name: str, file_path_str: str, auto: bool):
-    file_path: Path = Path(file_path_str)
-    if file_path.is_dir() and model_name == "chatgpt":
-        verbose_print(f"Sending {file_path} to {model_name}...")
-        batch_id = batch_process_chatgpt(file_path)
-        print(f"Batch created with ID: {batch_id}")
-        if auto:
-            verbose_print("Auto processing and exporting results....")
-            time.sleep(common.WAITING_TIMER)
-            status, status_message = check_batch(batch_id)
-            verbose_print(f"{batch_id} status: {status} \t {status_message}")
-            while status not in common.PROCESS_STATUS:
-                time.sleep(common.WAITING_TIMER)
-                status, status_message = check_batch(batch_id)
-            export_batch(batch_id)
-    pass
-
-def check_batch(): 
-    pass
-
-def export_batch():
-    pass
-
-def list_models():
-    pass
 
 def generate_csv_output(data: dict[str, Any], output_directory: Optional[Path] = None) -> None:
     """
@@ -122,25 +94,3 @@ def parallel_process(dir_path: Path, request_function: Callable) -> list[dict[st
                 print(f'{label} generated an exception: {e}')  # Corrected to use label for error reporting
 
     return request_output
-
-def batch_process_chatgpt(dir_path: Path) -> str:
-    # file_paths: list[Path] = get_file_paths(dir_path)
-    # file_name: str = dir_path.stem
-    # batch_file_location: Path = Path("../../Batch_Files") / f"{file_name}.json"
-    # generate_batch_file(file_paths, batch_file_location)
-    # verbose_print(f"Batch file saved to {batch_file_location}")
-    # return upload_batch_file(batch_file_location)
-    pass
-
-def get_file_paths(dir_path: Path) -> list[Path]:
-    """Get a list of file paths from a directory.
-
-    Args:
-        dir_path: Path to the directory containing files.
-
-    Returns:
-        A list of Path objects for each file in the directory.
-    """
-    # return [file for file in dir_path.iterdir() if file.is_file() and file.suffix in common.VALID_EXTENSIONS]
-
-

@@ -2,6 +2,7 @@
   "python.analysis.extraPaths": [
     "./Scripts",
     "./Scripts/api",
+    "./Scripts/api_v2",
     "./Scripts/api_v2"
   ]
 }

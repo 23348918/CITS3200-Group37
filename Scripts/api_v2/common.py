@@ -28,6 +28,10 @@ VIDEO_EXTENSIONS: Tuple[str, ...] = (
     '.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv'
 )
 
+IMAGE_EXTENSIONS: Tuple[str, ...] = (
+    '.jpg', '.jpeg', '.png', '.webp'
+)
+
 LLMS: list[str] = ["chatgpt", "gemini", "claude"]
 MAX_THREAD_WORKERS: int = 10
 MAX_OUTPUT_TOKENS: int = 100

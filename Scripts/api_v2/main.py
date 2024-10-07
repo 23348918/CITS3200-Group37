@@ -2,15 +2,17 @@ import argparse
 import common
 from common import set_verbose, set_prompt
 from auth import authenticate
-from actions import process_model, check_batch, export_batch, list_models, process_batch
+from process import process_model
+from batch_operations import print_check_batch, export_batch, list_batches, process_batch
+import sys
 
 ACTIONS: dict[str, callable] = {
     "prompt": lambda args: set_prompt(args.prompt),
-    "process": lambda args: process_model(args.llm_model, args.process, args.auto),
-    "check": lambda args: check_batch(args.check),
+    "process": lambda args: process_model(args.llm_model, args.process),
+    "check": lambda args: print_check_batch(args.check),
     "export": lambda args: export_batch(args.export),
-    "list": lambda args: list_models(),
-    "batch": lambda args: process_batch(),
+    "list": lambda args: list_batches(),
+    "batch": lambda args: process_batch(args.batch, args.auto),
 }
 
 def parse_arguments() -> argparse.Namespace:
@@ -43,6 +45,10 @@ def parse_arguments() -> argparse.Namespace:
 
 def main():
     args: argparse.Namespace = parse_arguments()
+    if args.llm_model != "chatgpt" and args.process != "process":
+        print("Only chatgpt model is supported for batch processing.")
+        sys.exit(1)
+
     if args.verbose:
         set_verbose()
 
@@ -53,6 +59,7 @@ def main():
         if (arg in ACTIONS and 
             getattr(args, arg) is not None and 
             getattr(args, arg) is not False):
+            print(arg, args)
             ACTIONS[arg](args)
 
 if __name__ == "__main__":
