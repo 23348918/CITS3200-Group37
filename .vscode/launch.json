@@ -8,7 +8,7 @@
       "program": "${file}",
       "console": "integratedTerminal",
       "args": [
-        "gemini -process /mnt/c/Users/cohen/OneDrive/uni/2024_2/CITS3200/CITS3200-Group37/Input/Video_Data/youtube-clip-downsized.mp4 --verbose"
+        "gemini -p /mnt/c/Users/cohen/OneDrive/uni/2024_2/CITS3200/CITS3200-Group37/Input/Video_Data/youtube-clip-downsized.mp4 -v"
       ]
     }
   ]
