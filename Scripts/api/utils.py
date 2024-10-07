@@ -277,7 +277,6 @@ def result_to_dict(content: bytes) -> Dict[str, Any]:
     
     return(data_list)
 
-
 def save_batch_results_to_file(dict_response: dict, out_path: str) -> None:
     """
     Saves the batch results to a specified output path.
@@ -318,9 +317,7 @@ def get_file_dict(directory_path: Path) -> Dict[str, Path]:
         if file_path.is_file():
             file_dict[file_path.name] = file_path
     return file_dict
-
-    
-    
+   
 def parse_claude_content(content: List[Dict[str, str]], field: str) -> str:
     """
     Parses the Claude response content to extract the specified field.

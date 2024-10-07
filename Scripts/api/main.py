@@ -268,7 +268,6 @@ def main() -> None:
     if args.process:
         common.auto = args.auto
 
-
         if args.prompt:
             common.set_prompt(args.prompt)
         if args.custom:

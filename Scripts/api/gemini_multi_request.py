@@ -6,6 +6,7 @@ from typing import Dict, Any, List
 from pathlib import Path
 import common
 from gemini_request import analyse_image, analyse_video
+from utils import extract_dynamic_fields
 from tqdm import tqdm
 
 def process_item(label: str, file_path: Path) -> Dict[str, Any]:
@@ -19,7 +20,7 @@ def process_item(label: str, file_path: Path) -> Dict[str, Any]:
     Returns:
         A dictionary containing the label and results for each file.
     """
-    result_dict = {"label": label}
+    result_dict = {}
     try:
         # Initialize the API client here if needed
         if file_path.suffix in common.VIDEO_EXTENSIONS:
@@ -32,6 +33,10 @@ def process_item(label: str, file_path: Path) -> Dict[str, Any]:
             result_dict["description"] = result.get("description", "Description not available")
             result_dict["reasoning"] = result.get("reasoning", "Reasoning not available")
             result_dict["action"] = result.get("action", "Action not available")
+            if common.custom_str:
+                dynamic_fields = {k: v for k, v in result.items() if k not in ['description', 'reasoning', 'action']}
+                result_dict.update(dynamic_fields)  # Merge dynamic fields into result_dict
+            print(result_dict)
         else:
             result_dict.update({"description": "Error processing file", "reasoning": "", "action": ""})
     except Exception as e:
