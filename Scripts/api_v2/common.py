@@ -16,7 +16,7 @@ class AnalysisResponse(BaseModel):
     action: str
 
 # Constants
-WAITING_TIMER: int = 10  # Waiting timer in seconds
+WAITING_TIMER: int = 2  # Waiting timer in seconds
 
 VALID_EXTENSIONS: Tuple[str, ...] = (
     '.jpg', '.jpeg', '.png', '.bmp', '.gif',
@@ -69,6 +69,12 @@ ARG_INFO = [
         "flags": ["-p", "--process"],
         "metavar": "FILE_PATH",
         "help": "Process the input file or directory."
+    },
+    {
+        "group": "exclusive",
+        "flags": ["-b", "--batch"],
+        "metavar": "FILE_PATH",
+        "help": "Process the input file or directory with batch processing."
     },
     {
         "group": "exclusive",

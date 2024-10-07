@@ -1,4 +1,3 @@
-from typing import List, Dict
 import tkinter as tk
 from tkinter import filedialog
 from pathlib import Path
@@ -93,7 +92,7 @@ def select_file() -> str:
 
     return file_path
 
-def get_file_dict(directory_path: Path) -> Dict[str, Path]:
+def get_file_dict(directory_path: Path) -> dict[str, Path]:
     """
     Generate a dictionary of file paths and labels from a directory.
 
@@ -109,7 +108,7 @@ def get_file_dict(directory_path: Path) -> Dict[str, Path]:
             file_dict[file_path.name] = file_path
     return file_dict
     
-def parse_claude_content(content: List[Dict[str, str]], field: str) -> str:
+def parse_claude_content(content: list[dict[str, str]], field: str) -> str:
     """
     Parses the Claude response content to extract the specified field.
 
@@ -156,9 +155,9 @@ def encode_image(image_path: Path) -> str:
     with image_path.open("rb") as image_file:
         return base64.b64encode(image_file.read()).decode('utf-8')
 
-def encode_video(video_path: Path, frame_rate_divisor: int = 2) -> List[str]:
+def encode_video(video_path: Path, frame_rate_divisor: int = 2) -> list[str]:
     """Encodes a video stored locally into an array of base64 strings for frames."""
-    images: List[str] = []
+    images: list[str] = []
     cam = cv2.VideoCapture(str(video_path))
     frame_rate = int(cam.get(cv2.CAP_PROP_FPS) / frame_rate_divisor)
     

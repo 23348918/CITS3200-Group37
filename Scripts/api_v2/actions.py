@@ -4,11 +4,12 @@ import sys
 from pathlib import Path
 from llm_requests import chatgpt_request, gemini_request, claude_request
 from utils import get_file_dict, ask_save_location
-from typing import Callable, Any, List, Dict, Optional
+from typing import Callable, Any, Optional
 from tqdm import tqdm
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
 import pandas as pd
+import time
 
 
 REQUEST_FUNCTIONS: dict[str, Callable] = {
@@ -23,29 +24,48 @@ def process_model(model_name: str, file_path_str: str, auto: bool):
         print("Invalid model name")
         sys.exit(1)
     file_path: Path = Path(file_path_str)
+
     if file_path.is_file() and file_path.suffix in common.VALID_EXTENSIONS:
         verbose_print(f"Sending {file_path} to {model_name}...")
         request_output: list[dict[str, Any]] = [REQUEST_FUNCTIONS[model_name](file_path)]
-    elif file_path.is_dir() and model_name in ["gemini", "claude"]:
+
+    elif file_path.is_dir():
         verbose_print(f"Sending {file_path} to {model_name}...")
         request_output: list[dict[str, Any]] = parallel_process(file_path, REQUEST_FUNCTIONS[model_name])
-    elif file_path.is_dir() and model_name == "chatgpt":
-        pass
+    
     else:
         print(f"{file_path} is not a valid file or directory.")
         sys.exit(1)
+
     generate_csv_output(request_output)
 
-def check_model(): 
+def process_batch(model_name: str, file_path_str: str, auto: bool):
+    file_path: Path = Path(file_path_str)
+    if file_path.is_dir() and model_name == "chatgpt":
+        verbose_print(f"Sending {file_path} to {model_name}...")
+        batch_id = batch_process_chatgpt(file_path)
+        print(f"Batch created with ID: {batch_id}")
+        if auto:
+            verbose_print("Auto processing and exporting results....")
+            time.sleep(common.WAITING_TIMER)
+            status, status_message = check_batch(batch_id)
+            verbose_print(f"{batch_id} status: {status} \t {status_message}")
+            while status not in common.PROCESS_STATUS:
+                time.sleep(common.WAITING_TIMER)
+                status, status_message = check_batch(batch_id)
+            export_batch(batch_id)
     pass
 
-def export_model():
+def check_batch(): 
+    pass
+
+def export_batch():
     pass
 
 def list_models():
     pass
 
-def generate_csv_output(data: Dict[str, Any], output_directory: Optional[Path] = None) -> None:
+def generate_csv_output(data: dict[str, Any], output_directory: Optional[Path] = None) -> None:
     """
     Exports the parsed data to a CSV file, handling both single and multi-image Claude responses.
 
@@ -54,7 +74,7 @@ def generate_csv_output(data: Dict[str, Any], output_directory: Optional[Path] =
         model: The model name (e.g., 'claude').
         output_directory: Directory where the CSV file should be saved. If None, prompts user for location.
     """
-    rows: List[Dict[str, Any]] = [
+    rows: list[dict[str, Any]] = [
         {
             'File_Name': single_data['file_name'],
             'Model': single_data['model'],
@@ -72,7 +92,7 @@ def generate_csv_output(data: Dict[str, Any], output_directory: Optional[Path] =
     df.to_csv(csv_file_path, index=False)
     verbose_print(f"Results saved to {csv_file_path}")
 
-def parallel_process(dir_path: Path, request_function: Callable) -> List[Dict[str, Any]]:
+def parallel_process(dir_path: Path, request_function: Callable) -> list[dict[str, Any]]:
     """
     Process multiple files in parallel using a request function.
 
@@ -86,7 +106,7 @@ def parallel_process(dir_path: Path, request_function: Callable) -> List[Dict[st
     request_output = []
     
     # Create a dictionary of valid files to process
-    file_dict: Dict[str, Path] = get_file_dict(dir_path)
+    file_dict: dict[str, Path] = get_file_dict(dir_path)
 
     with ThreadPoolExecutor(max_workers=common.MAX_THREAD_WORKERS) as executor:
         future_to_file = {executor.submit(request_function, file): label for label, file in file_dict.items()}
@@ -102,3 +122,25 @@ def parallel_process(dir_path: Path, request_function: Callable) -> List[Dict[st
                 print(f'{label} generated an exception: {e}')  # Corrected to use label for error reporting
 
     return request_output
+
+def batch_process_chatgpt(dir_path: Path) -> str:
+    # file_paths: list[Path] = get_file_paths(dir_path)
+    # file_name: str = dir_path.stem
+    # batch_file_location: Path = Path("../../Batch_Files") / f"{file_name}.json"
+    # generate_batch_file(file_paths, batch_file_location)
+    # verbose_print(f"Batch file saved to {batch_file_location}")
+    # return upload_batch_file(batch_file_location)
+    pass
+
+def get_file_paths(dir_path: Path) -> list[Path]:
+    """Get a list of file paths from a directory.
+
+    Args:
+        dir_path: Path to the directory containing files.
+
+    Returns:
+        A list of Path objects for each file in the directory.
+    """
+    # return [file for file in dir_path.iterdir() if file.is_file() and file.suffix in common.VALID_EXTENSIONS]
+
+

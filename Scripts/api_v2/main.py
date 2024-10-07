@@ -2,14 +2,15 @@ import argparse
 import common
 from common import set_verbose, set_prompt
 from auth import authenticate
-from actions import process_model, check_model, export_model, list_models
+from actions import process_model, check_batch, export_batch, list_models, process_batch
 
 ACTIONS: dict[str, callable] = {
     "prompt": lambda args: set_prompt(args.prompt),
-    "process": lambda args: process_model(args.llm_model, args.process, args.auto),  # Passes the file path
-    "check": lambda args: check_model(args.check),        # Passes the batch ID
-    "export": lambda args: export_model(args.export),     # Passes the batch ID
-    "list": lambda args: list_models(),                   # No argument required
+    "process": lambda args: process_model(args.llm_model, args.process, args.auto),
+    "check": lambda args: check_batch(args.check),
+    "export": lambda args: export_batch(args.export),
+    "list": lambda args: list_models(),
+    "batch": lambda args: process_batch(),
 }
 
 def parse_arguments() -> argparse.Namespace:
