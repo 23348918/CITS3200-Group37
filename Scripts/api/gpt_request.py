@@ -3,6 +3,7 @@ from typing import Dict, Optional
 from pydantic import BaseModel
 import common
 import cv2
+from utils import create_dynamic_response_model
 
 
 class BatchContentRessponse(BaseModel):
@@ -59,7 +60,7 @@ def analyse_image(file_path: str, model: Optional[str] = "gpt-4o-mini") -> Dict[
     Returns:
         The analysis response.
     """
-    DynamicAnalysisResponse = common.create_dynamic_response_model(common.custom_str)
+    DynamicAnalysisResponse = create_dynamic_response_model(common.custom_str)
     image_path: str = encode_image(file_path)
     response: Dict[str, str] = common.chatgpt_client.beta.chat.completions.parse(
         model=model,
@@ -102,12 +103,12 @@ def analyse_video(file_path: str, model: Optional[str] = "gpt-4o-mini") -> Dict[
         The analysis response.
     """
 
-    DynamicAnalysisResponse = common.create_dynamic_response_model(common.custom_str)
+    DynamicAnalysisResponse = create_dynamic_response_model(common.custom_str)
     video_path: list[str] = encode_video(file_path)
     model_messages = [
             {
                 "role": "system",
-                "content": common.PROMPT
+                "content": common.prompt
             },
             {
                 "role": "user",

@@ -3,9 +3,32 @@ from typing import List, Dict, Any, Optional
 import tkinter as tk
 from tkinter import filedialog
 from pathlib import Path
+from pydantic import BaseModel, create_model
+from common import AnalysisResponse
 import os
 import json
 import sys
+
+def create_dynamic_response_model(custom_str: str) -> BaseModel:
+
+    if custom_str is None:
+        return AnalysisResponse
+    
+    dynamic_fields = {}
+    
+    lines = custom_str.splitlines()
+    for line in lines:
+        if ": " in line:
+            first_word = line.split(": ")[0].strip()
+            dynamic_fields[first_word.lower()] = (str, ...)
+    
+    DynamicAnalysisResponse = create_model(
+        'DynamicAnalysisResponse',  # Name of the new model
+        **dynamic_fields,           # Unpack dynamic fields
+        __base__=AnalysisResponse    # Inherit from the base class
+    )
+    
+    return DynamicAnalysisResponse
 
 def extract_dynamic_fields(parts: List[str]) -> Dict[str, str]:
         dynamic_fields = {}
@@ -136,16 +159,20 @@ def generate_csv_output(data: Dict[str, Any], model_name: str, output_directory:
             rows.append(row)
 
     elif model_name.startswith('models/gemini-'):
-        rows: List[Dict[str, Any]] = [
-            {
+        rows = []
+        for index, single_data in enumerate(data, start=1):
+            row = {
                 'Image_ID': index,
                 'Model': model_name,
-                'Description': single_data['description'],
-                'Action': single_data['action'],
-                'Reasoning': single_data['reasoning']
+                'Description': single_data.get('description', ''),
+                'Action': single_data.get('action', ''),
+                'Reasoning': single_data.get('reasoning', ''),
             }
-            for index, single_data in enumerate(data)
-        ]
+            for key, value in single_data.items():
+                if key not in row:
+                    row[key.capitalize()] = value
+
+            rows.append(row)
     elif model_name.startswith('claude'):
         rows: List[Dict[str, Any]] = []
         # Check if data is a list (multi-image) or dict (single-image)
@@ -212,8 +239,6 @@ def generate_csv_output(data: Dict[str, Any], model_name: str, output_directory:
     # Save the DataFrame to CSV
     df.to_csv(csv_file_path, index=False)
     print(f"Results saved to {csv_file_path}")
-
-
 
 def select_file() -> str:
     """

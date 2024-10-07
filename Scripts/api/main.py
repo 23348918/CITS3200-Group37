@@ -275,7 +275,6 @@ def main() -> None:
             custom_str = read_customs(args.custom)
             common.set_custom(custom_str)
             common.append_prompt(custom_str)
-            common.create_dynamic_response_model(custom_str)
             if args.verbose:
                 print(custom_str)
         else:

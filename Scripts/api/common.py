@@ -1,7 +1,7 @@
 from openai import OpenAI
 from typing import Tuple, Optional
 from anthropic import Anthropic
-from pydantic import BaseModel, create_model
+from pydantic import BaseModel
 
 # Global Variables
 chatgpt_client: OpenAI = None
@@ -48,23 +48,6 @@ PROMPT : str = (
 # TODO: Possibly a config class to allow for batch processing option here instead of CLI
 
 # Global Functions
-def create_dynamic_response_model(custom_str: str) -> BaseModel:
-    dynamic_fields = {}
-    
-    lines = custom_str.splitlines()
-    for line in lines:
-        if ": " in line:
-            first_word = line.split(": ")[0].strip()
-            dynamic_fields[first_word.lower()] = (str, ...)
-    
-    DynamicAnalysisResponse = create_model(
-        'DynamicAnalysisResponse',  # Name of the new model
-        **dynamic_fields,           # Unpack dynamic fields
-        __base__=AnalysisResponse    # Inherit from the base class
-    )
-    
-    return DynamicAnalysisResponse
-
 def append_prompt(custom_str: str = None) -> None:
     global prompt
     if custom_str is not None:
