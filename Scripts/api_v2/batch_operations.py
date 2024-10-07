@@ -9,6 +9,7 @@ import os
 import sys
 import openai
 from openai import OpenAI
+import re
 
 
 def process_batch(file_path_str: str, auto: bool):
@@ -62,14 +63,27 @@ def export_batch(batch_id: str) -> None:
         print("You can only export the file once. Please rerun the process to re-export the results again.")
         sys.exit(1)
 
-    response = common.chatgpt_client.files.content(output_file_id).read()
-    print(response)
-    full_response = response.dict()
-    print(full_response)
-    # response_dict = full_response['choices'][0]['message']['parsed']
-    # response_dict["model"] = "gpt-4o-mini"
-    # response_dict["file_name"] = file_path.name
-    # return response_dict
+    response_bytes: bytes = common.chatgpt_client.files.content(output_file_id).read()
+    response_dicts = bytes_to_dicts(response_bytes)
+    generate_csv_output(response_dicts)
+
+def bytes_to_dicts(response_bytes: bytes) -> list[dict[str, str]]:
+    response_str: str = response_bytes.decode("utf-8")
+    response_lines: list[str] = response_str.splitlines()
+    response_dicts: list = []
+    for line in response_lines:
+        json_obj = json.loads(line)
+        file_name = json_obj['id']
+        model = json_obj['response']['body']['model']
+        content = json_obj['response']['body']['choices'][0]['message']['content']
+        content =content.replace("*", "")
+        pattern = re.compile(r'(' + '|'.join(common.AnalysisResponse.model_fields.keys()) + r'):\s*(.*?)\s*(?=\d+\.|$)', re.DOTALL | re.IGNORECASE)
+        matches = pattern.findall(content)
+        response_dict = {match[0].lower(): match[1].strip() for match in matches}
+        response_dict['file_name'] = file_name
+        response_dict['model'] = model
+        response_dicts.append(response_dict)
+    return response_dicts
     
 
 def list_batches() -> None:
@@ -90,17 +104,17 @@ def batch_process_chatgpt(dir_path: Path) -> str:
 
 def generate_batch_file(file_dict: dict[str, Path], out_path: Path) -> None:
     with open(out_path, "w") as f:
-        for _, file_path in file_dict.items():
+        for label, file_path in file_dict.items():
             if file_path.suffix not in common.IMAGE_EXTENSIONS:
                 verbose_print(f"Skipping {file_path}. Only image files are supported.")
                 continue
-            json_entry = create_json_entry(file_path)
+            json_entry = create_json_entry(label, file_path)
             json.dump(json_entry, f)
             f.write("\n")
     if not os.path.exists(out_path):
         raise FileNotFoundError(f"Batch file not found at {out_path}")
 
-def create_json_entry(file_path: Path) -> dict[str, str]:
+def create_json_entry(label: str, file_path: Path) -> dict[str, str]:
     """
     Creates an entry for a batch file.
 
@@ -113,7 +127,7 @@ def create_json_entry(file_path: Path) -> dict[str, str]:
     """
     encoded_image  = encode_image(file_path)
     json_entry = {
-        "custom_id": file_path,
+        "custom_id": label,
         "method": "POST",
         "url": "/v1/chat/completions",
         "body": {
