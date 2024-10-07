@@ -99,7 +99,6 @@ def check_batch_process(client: OpenAI, batch_id: str) -> str:
 
     return (batch_status.status, status_message)
 
-
 def delete_exported_files(client: OpenAI, batch_results) -> None:
     """
     Deletes the exported files after saving the batch results.
@@ -126,10 +125,6 @@ def delete_exported_files(client: OpenAI, batch_results) -> None:
     if batch_results.error_file_id:
         client.files.delete(batch_results.error_file_id)
         # print (batch_results.error_file_id)
-
-
-
-
 
 def export_batch_result(client: OpenAI, batch_id: str, out_path: str) -> None:
     """

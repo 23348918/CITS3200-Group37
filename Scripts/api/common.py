@@ -28,6 +28,10 @@ VALID_EXTENSIONS: Tuple[str, ...] = (
     '.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv'
 )
 
+IMAGE_EXTENSIONS: Tuple[str, ...] = (
+    ".png", ".jpeg", ".jpg", ".gif", ".webp"
+)
+
 VIDEO_EXTENSIONS: Tuple[str, ...] = (
     '.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv'
 )

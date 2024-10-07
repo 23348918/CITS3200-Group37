@@ -2,11 +2,12 @@ import json
 import os
 import base64
 import sys
+import common
 import tkinter as tk
 from tkinter import filedialog
-from typing import Optional
-from typing import List
-import common
+from typing import Optional, List
+from pathlib import Path
+from gpt_request import encode_image, encode_video
 
 
 def get_directory(action_name: str) -> Optional[str]:
@@ -43,13 +44,12 @@ def get_file_paths(directory_path: str) -> list[str]:
     Returns:
         List[str]: List of image file paths.
     """
-    image_extensions = {".png", ".jpeg", ".jpg", ".gif", ".webp"}
     image_file_paths = []
 
     # If the path is a file, check its extension and return it if it's an image
     if os.path.isfile(directory_path):
         _, extension = os.path.splitext(directory_path)
-        if extension.lower() in image_extensions:
+        if extension.lower() in common.VALID_EXTENSIONS:
             return [directory_path]
         else:
             print(f"Skipping unsupported file: {os.path.basename(directory_path)}")
@@ -63,21 +63,21 @@ def get_file_paths(directory_path: str) -> list[str]:
     
     return image_file_paths
 
-def encode_image(image_path):
-    """
-    Encodes the image located at the given image_path into base64 format.
+# def encode_image(image_path):
+#     """
+#     Encodes the image located at the given image_path into base64 format.
 
-    Parameters:
-    image_path (str): The path to the image file.
+#     Parameters:
+#     image_path (str): The path to the image file.
 
-    Returns:
-    str: The base64 encoded representation of the image.
-    """
-    with open(image_path, "rb") as image_file:
-        res = base64.b64encode(image_file.read()).decode('utf-8')
-    return res
+#     Returns:
+#     str: The base64 encoded representation of the image.
+#     """
+#     with open(image_path, "rb") as image_file:
+#         res = base64.b64encode(image_file.read()).decode('utf-8')
+#     return res
 
-def create_entry(filepath):
+def create_entry(item):
     """
     Creates an entry for a batch file.
 
@@ -88,9 +88,16 @@ def create_entry(filepath):
         dict: A dictionary representing the entry for the batch file.
 
     """
-    encodedImage  = encode_image(filepath)
+    
+    filepath = Path(item)
+    encoded_media = None
+    if filepath.suffix in common.VIDEO_EXTENSIONS:
+        encoded_media = encode_video(filepath)
+    else:
+        encoded_media  = encode_image(filepath)
+
     currentDict = {
-        "custom_id": filepath,
+        "custom_id": item,
         "method": "POST",
         "url": "/v1/chat/completions",
         "body": {
@@ -98,7 +105,7 @@ def create_entry(filepath):
             "messages": [
                 {
                     "role": "system",
-                    "content": common.PROMPT,
+                    "content": common.prompt,
                 },
                 {
                     "role": "user",
@@ -107,7 +114,7 @@ def create_entry(filepath):
                         {
                             "type": "image_url",
                             "image_url": {
-                                "url": f"data:image/jpeg;base64,{encodedImage}"
+                                "url": f"data:image/jpeg;base64,{encoded_media}"
                             },
                         },
                     ],

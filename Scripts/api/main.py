@@ -52,7 +52,7 @@ def batch_process(process_path: Path, llm_model: str) -> None:
         process_path: Path for the directory to be processed.
     """
     if common.verbose:
-        print(f"Batch processinf for {process_path} has started")
+        print(f"Batch processing for {process_path} has started")
         
     dirpath: List[Path] = get_file_paths(process_path)
     filename = process_path.stem
@@ -68,7 +68,6 @@ def batch_process(process_path: Path, llm_model: str) -> None:
     upload_batch = upload_batch_file(common.chatgpt_client, outpath)
     batch_object = create_batch_file(common.chatgpt_client, upload_batch)
     return batch_object.id
-    # print(f"Batch created with ID: {batch_object.id}")
 
 def process(process_path: str, llm_model: str) -> None:
     """Process the given path as a singular or batch request
@@ -261,8 +260,6 @@ def main() -> None:
         common.set_verbose(True)
         print("Verbose mode enabled.")
         
- 
-    
     # Case 1: User would like to process image or directory
     # TODO: Implement video processing functionality here
     if args.process:
