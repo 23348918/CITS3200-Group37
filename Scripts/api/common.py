@@ -1,6 +1,6 @@
 import json
 from openai import OpenAI
-from typing import Tuple
+from typing import Tuple, Optional
 from anthropic import Anthropic
 from pydantic import BaseModel
 
@@ -8,6 +8,8 @@ from pydantic import BaseModel
 chatgpt_client: OpenAI = None
 claude_client: Anthropic = None
 verbose: bool = False
+custom_str: str = None
+prompt: str = None
 
 # Response Format
 class AnalysisResponse(BaseModel):
@@ -24,6 +26,10 @@ VALID_EXTENSIONS: Tuple[str, ...] = (
     '.jpg', '.jpeg', '.png', '.bmp', '.gif',
     '.tiff', '.tif', '.webp', '.heic', '.heif',
     '.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv'
+)
+
+IMAGE_EXTENSIONS: Tuple[str, ...] = (
+    ".png", ".jpeg", ".jpg", ".gif", ".webp"
 )
 
 VIDEO_EXTENSIONS: Tuple[str, ...] = (
@@ -119,6 +125,14 @@ ARG_INFO = [
 ]
 
 # Global Functions
+def append_prompt(custom_str: str = None) -> None:
+    global prompt
+    if custom_str is not None:
+        prompt = PROMPT + custom_str
+    else:
+        prompt = PROMPT
+    
+
 def set_verbose(value: bool = True) -> None:
     global verbose
     verbose = value
@@ -132,3 +146,7 @@ def set_prompt(prompt: str) -> None:
 def verbose_print(*args, **kwargs) -> None:
     if verbose:
         print(*args, **kwargs)
+
+def set_custom(string: str) -> None:
+    global custom_str
+    custom_str = string

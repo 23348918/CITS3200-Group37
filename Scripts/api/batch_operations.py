@@ -1,7 +1,7 @@
 import common
 from common import verbose_print
 from pathlib import Path
-from utils import get_file_dict, encode_image
+from utils import get_file_dict, encode_image, encode_video
 from process import generate_csv_output
 import time
 import json
@@ -167,7 +167,12 @@ def create_json_entry(label: str, file_path: Path) -> dict[str, str]:
     Returns:
         A dictionary representing the entry for the batch file.
     """
-    encoded_image: str = encode_image(file_path)
+    encoded_media = None
+    if file_path.suffix in common.VIDEO_EXTENSIONS:
+        encoded_media = encode_video(file_path)
+    else:
+        encoded_media  = encode_image(file_path)
+    
     json_entry: dict = {
         "custom_id": label,
         "method": "POST",
@@ -177,7 +182,7 @@ def create_json_entry(label: str, file_path: Path) -> dict[str, str]:
             "messages": [
                 {
                     "role": "system",
-                    "content": common.PROMPT,
+                    "content": common.prompt,
                 },
                 {
                     "role": "user",
@@ -186,7 +191,7 @@ def create_json_entry(label: str, file_path: Path) -> dict[str, str]:
                         {
                             "type": "image_url",
                             "image_url": {
-                                "url": f"data:image/jpeg;base64,{encoded_image}"
+                                "url": f"data:image/jpeg;base64,{encoded_media}"
                             },
                         },
                     ],
