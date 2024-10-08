@@ -24,6 +24,7 @@ def process_model(model_name: str, file_path_str: str) -> None:
         file_path_str: The path to the file or directory to process.
     """
     verbose_print(f"Processing model: {model_name}")
+    verbose_print(f"Prompt Used: {common.prompt}")
     if model_name not in common.LLMS:
         print("Invalid model name")
         sys.exit(1)
@@ -41,6 +42,9 @@ def process_model(model_name: str, file_path_str: str) -> None:
         print(f"{file_path} is not a valid file or directory.")
         sys.exit(1)
 
+    # TODO: Remove print
+    print(request_output)
+
     generate_csv_output(request_output)
 
 def generate_csv_output(data: dict[str, Any], output_directory: Optional[Path] = None) -> None:
@@ -50,16 +54,21 @@ def generate_csv_output(data: dict[str, Any], output_directory: Optional[Path] =
         data: The data to convert to a CSV file.
         output_directory: The directory to save the CSV file in. If None, prompts user for location
     """
-    rows: list[dict[str, Any]] = [
-        {
-            'File_Name': single_data['file_name'],
-            'Model': single_data['model'],
-            'Description': single_data['description'],
-            'Reasoning': single_data['reasoning'],
-            'Action': single_data['action']
+    rows: list[dict[str, Any]] = []
+
+    for single_data in data:
+        row = {
+                'File_name': single_data['file_name'],
+                'Model': single_data['model'],
+                'Description': single_data['description'],
+                'Reasoning': single_data['reasoning'],
+                'Action': single_data['action']
         }
-        for single_data in data
-    ]
+
+        for key, value in single_data.items():
+            if key not in row:
+                row[key.capitalize()] = value
+        rows.append(row)
     df: pd.DataFrame = pd.DataFrame(rows)
     if output_directory is None:
         csv_file_path = ask_save_location("result.csv")

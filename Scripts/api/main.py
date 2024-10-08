@@ -1,6 +1,6 @@
 import argparse
 import common
-from common import set_verbose, set_prompt
+from common import set_verbose, set_prompt, set_custom
 from auth import authenticate
 from process import process_model
 from batch_operations import print_check_batch, export_batch, list_batches, process_batch
@@ -50,7 +50,7 @@ def parse_arguments() -> argparse.Namespace:
 def main():
     """Main function that redirects to relevent functions based on the arguments."""
     args: argparse.Namespace = parse_arguments()
-    if args.llm_model != "chatgpt" and args.process in None:
+    if args.llm_model != "chatgpt" and args.process is None:
         print("Only chatgpt model is supported for batch processing.")
         sys.exit(1)
 
@@ -59,6 +59,9 @@ def main():
 
     authenticate(args.llm_model)
 
+    # TODO: Integrate with new format
+    set_custom(args.custom)
+
     # Execute corresponding action from the ACTIONS dictionary
     for arg in vars(args):
         if (arg in ACTIONS and 
@@ -66,6 +69,7 @@ def main():
             getattr(args, arg) is not False):
             print(arg, args)
             ACTIONS[arg](args)
+
 
 if __name__ == "__main__":
     main()
