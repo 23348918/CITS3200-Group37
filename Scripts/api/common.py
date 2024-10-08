@@ -43,12 +43,13 @@ IMAGE_EXTENSIONS: Tuple[str, ...] = (
 
 LLMS: list[str] = ["chatgpt", "gemini", "claude"]
 MAX_THREAD_WORKERS: int = 10
-MAX_OUTPUT_TOKENS: int = 200
+MAX_OUTPUT_TOKENS_CLAUDE: int = 4096
+MAX_OUTPUT_TOKENS_GEMINI: int = 400
 
 PROMPT : str = (
     "You are a road safety visual assistant installed in a car. Your task is to analyze images of road scenes and provide recommendations for safe driving. Keep your response concise."
     "The user will provide you with an image or series of images to analyze."
-    "For each image or sub-image, use the template format to explain the following in least words, never leave :"
+    "For each image or sub-image, use the template format to explain the following in least words, always giving a result in quotations. "
     "description: Describe what the car is currently doing. Then, describe the objects in the scene in few words, if any, focus on safety hazards, "
     "road signs, traffic lights, road lines/marks, pedestrians, obstacles."
     "reasoning: Explain in only one sentence the reason for recommended action. Only talk about what is specifically about the scene. Avoid generic driving safety advice."
