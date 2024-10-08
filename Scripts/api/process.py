@@ -9,7 +9,7 @@ from tqdm import tqdm
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
 import pandas as pd
-
+import os 
 REQUEST_FUNCTIONS: dict[str, Callable] = {
     "chatgpt": chatgpt_request,
     "gemini": gemini_request,
@@ -74,8 +74,23 @@ def generate_csv_output(data: dict[str, Any], output_directory: Optional[Path] =
         csv_file_path = ask_save_location("result.csv")
     else:
         csv_file_path = output_directory / "result.csv"
-    df.to_csv(csv_file_path, index=False)
-    verbose_print(f"Results saved to {csv_file_path}")
+        
+        
+    try:
+        # Save the DataFrame to a CSV file
+        df.to_csv(csv_file_path, index=False)
+        
+        # Check if the file exists
+        if os.path.isfile(csv_file_path):
+            verbose_print(f"Results saved to {csv_file_path}")
+            return True
+        else:
+            print("CSV file was not created.")
+            return False
+    except Exception as e:
+        print(f"An error occurred: {e}")    
+        return False
+        
 
 def parallel_process(dir_path: Path, request_function: Callable) -> list[dict[str, Any]]:
     """Process multiple files in parallel using a request function.

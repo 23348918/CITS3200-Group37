@@ -20,7 +20,7 @@ def process_batch(file_path_str: str, auto: bool) -> None:
         auto: Boolean flag indicating whether to automatically process and export results.
     """
     file_path: Path = Path(file_path_str)
-    if file_path.is_dir():
+    if file_path.is_dir() or file_path.suffix in common.VALID_EXTENSIONS:
         verbose_print(f"Sending {file_path} to chatgpt...")
         batch_id: str = batch_process_chatgpt(file_path)
         print(f"Batch created with ID: {batch_id}")
@@ -89,9 +89,9 @@ def export_batch(batch_id: str) -> None:
 
     response_bytes: bytes = common.chatgpt_client.files.content(output_file_id).read()
     response_dicts: list[dict[str, str]] = bytes_to_dicts(response_bytes)
-    # TODO: Delete print
-    print(response_dicts)
-    generate_csv_output(response_dicts)
+    if generate_csv_output(response_dicts):
+        delete_exported_files(common.chatgpt_client, batch_results)
+        verbose_print(f"Cleaning up batch relevant files.")
 
 def bytes_to_dicts(response_bytes: bytes) -> list[dict[str, str]]:
     """Converts a byte response to a list of dictionaries.
@@ -242,3 +242,29 @@ def upload_batch_file(batch_file_path: Path) -> str:
         completion_window="24h"
     ).id
     return batch_id
+
+
+def delete_exported_files(client: OpenAI, batch_results) -> None:
+    """
+    Deletes the exported files after saving the batch results.
+
+    Args:
+        client: Authenticated OpenAI client.
+        batch_results: The batch results object.
+
+    Returns:
+        None
+    """
+
+
+    if batch_results.input_file_id:
+        client.files.delete(batch_results.input_file_id)
+        # print (batch_results.input_file_id)
+
+    if batch_results.output_file_id:
+        client.files.delete(batch_results.output_file_id)
+        # print (batch_results.output_file_id)
+
+    if batch_results.error_file_id:
+        client.files.delete(batch_results.error_file_id)
+        # print (batch_results.error_file_id)

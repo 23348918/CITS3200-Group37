@@ -1,3 +1,6 @@
+# to run tests, use the command 'pytest -v test_auth.py' in the terminal
+# or use 'python3 -m unittest test_auth.py -v'
+
 import os
 import unittest
 from unittest.mock import patch, mock_open
@@ -6,6 +9,7 @@ from openai import OpenAI
 from anthropic import Anthropic
 import google.generativeai as genai
 from pathlib import Path
+import pytest
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'Scripts/api')))
 from auth import authenticate  # Replace 'your_module' with the actual module name
@@ -27,7 +31,6 @@ class TestAuthenticate(unittest.TestCase):
 
         # Optionally, check if the method correctly sets the chatgpt_client
         self.assertIsNotNone(common.chatgpt_client)
-        print("ChatGPT authentication test passed successfully.")
 
 
     # Case 2: Claude Authentication Success
@@ -45,7 +48,6 @@ class TestAuthenticate(unittest.TestCase):
 
         # Optionally, check if the method correctly sets the claude_client
         self.assertIsNotNone(common.claude_client)
-        print("Claude authentication test passed successfully.")
         
     # Case 3: Invalid API Key for ChatGPT
     @patch('builtins.open', new_callable=mock_open, read_data='invalid_api_key')
@@ -57,7 +59,6 @@ class TestAuthenticate(unittest.TestCase):
         model_name = 'chatgpt'
         with self.assertRaises(Exception):
             authenticate(model_name)
-        print("ChatGPT invalid API key test passed successfully.")
         
     # Case 4: Invalid API Key for Claude
     @patch('builtins.open', new_callable=mock_open, read_data='invalid_api_key')
@@ -69,7 +70,6 @@ class TestAuthenticate(unittest.TestCase):
         model_name = 'claude'
         with self.assertRaises(Exception):
             authenticate(model_name)
-        print("Claude invalid API key test passed successfully.")
 
     # Case 5: Invalid API Key for Gemini
     @patch('builtins.open', new_callable=mock_open, read_data='invalid_api_key')
@@ -81,7 +81,6 @@ class TestAuthenticate(unittest.TestCase):
         model_name = 'gemini'
         with self.assertRaises(Exception):
             authenticate(model_name)
-        print("Gemini invalid API key test passed successfully.")
             
      # Case 6: API Key File Does Not Exist for ChatGPT
     @patch('builtins.open', new_callable=mock_open)
@@ -90,7 +89,6 @@ class TestAuthenticate(unittest.TestCase):
         model_name = 'chatgpt'
         with self.assertRaises(FileNotFoundError):
             authenticate(model_name)
-        print("ChatGPT api file not found test passed successfully.")
         
     # Case 7: API Key File Does Not Exist for Claude
     @patch('builtins.open', new_callable=mock_open)
@@ -99,7 +97,6 @@ class TestAuthenticate(unittest.TestCase):
         model_name = 'claude'
         with self.assertRaises(FileNotFoundError):
             authenticate(model_name)
-        print("Claude api file not found test passed successfully.")
     # Case 8: API Key File Does Not Exist for Gemini
     @patch('builtins.open', new_callable=mock_open)
     @patch('auth.Path.exists', return_value=False)  # Mock file not existing
@@ -107,7 +104,6 @@ class TestAuthenticate(unittest.TestCase):
         model_name = 'gemini'
         with self.assertRaises(FileNotFoundError):
             authenticate(model_name)
-        print("Gemini api file not found test passed successfully.")     
 
 
 if __name__ == '__main__':

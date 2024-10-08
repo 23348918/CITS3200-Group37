@@ -19,27 +19,21 @@ class AnalysisResponse(BaseModel):
     action: str
 
 # Constants
-WAITING_TIMER: int = 2  # Waiting timer in seconds
+WAITING_TIMER: int = 15  # Waiting timer in seconds
 
 PROCESS_STATUS : list = ["completed", "failed", "cancelled", "expired"]
 
 VALID_EXTENSIONS: Tuple[str, ...] = (
-    '.jpg', '.jpeg', '.png', '.bmp', '.gif',
-    '.tiff', '.tif', '.webp', '.heic', '.heif',
-    '.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv'
-)
-
-IMAGE_EXTENSIONS: Tuple[str, ...] = (
-    ".png", ".jpeg", ".jpg", ".gif", ".webp"
+    '.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif',
+    '.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv', '.mpeg', '.x-flv', 
+    '.mpg', '.webm', '.3gp'
 )
 
 VIDEO_EXTENSIONS: Tuple[str, ...] = (
-    '.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv'
+    '.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv', '.mpeg', '.x-flv', '.mpg', '.webm', '.3gp'
 )
 
-IMAGE_EXTENSIONS: Tuple[str, ...] = (
-    '.jpg', '.jpeg', '.png', '.webp'
-)
+
 
 LLMS: list[str] = ["chatgpt", "gemini", "claude"]
 MAX_THREAD_WORKERS: int = 10
