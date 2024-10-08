@@ -13,7 +13,6 @@ ACTIONS: dict[str, callable] = {
     "export": lambda args: export_batch(args.export),
     "list": lambda args: list_batches(),
     "batch": lambda args: process_batch(args.batch, args.auto),
-    "custom": lambda args: set_custom(args.custom)
 }
 
 def parse_arguments() -> argparse.Namespace:
@@ -59,6 +58,9 @@ def main():
         set_verbose()
 
     authenticate(args.llm_model)
+
+    # TODO: Integrate with new format
+    set_custom(args.custom)
 
     # Execute corresponding action from the ACTIONS dictionary
     for arg in vars(args):

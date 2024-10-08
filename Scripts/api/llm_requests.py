@@ -73,6 +73,7 @@ def gemini_request(file_path: Path) -> dict[str, str]:
             response_schema = list[DynamicAnalysisResponse],
             max_output_tokens = common.MAX_OUTPUT_TOKENS)
             )
+    print(response.text)
     response_dict: dict = response_to_dictionary(response.text, "models/gemini-1.5-pro")
     response_dict["file_name"] = file_path.name
     return response_dict

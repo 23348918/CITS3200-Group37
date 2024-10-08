@@ -49,11 +49,12 @@ PROMPT : str = (
     "You are a road safety visual assistant installed in a car. Your task is to analyze images of road scenes and provide recommendations for safe driving. Keep your response concise."
     "The user will provide you with an image or series of images to analyze."
     "For each image or sub-image, use the template format to explain the following in least words:"
-    "1. description: Describe what the car is currently doing. Then, describe the objects in the scene in few words, if any, focus on safety hazards, "
-    "road signs, traffic lights, road lines/marks, pedestrians, obstacles."
-    "3. reasoning: Explain in only one sentence the reason for recommended action. Only talk about what is specifically about the scene. Avoid generic driving safety advice."
-    "2. action: In few words, give suggestion as to what action should be taken by the driver. "
-    "Also include if driver can change lane, overtake or turn left/right."
+    "Description: Describe what the car is currently doing. Then, describe the objects in the scene in few words, if any, focus on safety hazards, "
+    "road signs, traffic lights, road lines/marks, pedestrians, obstacles.\n"
+    "Action: In few words, give suggestion as to what action should be taken by the driver."
+    "Also include if driver can change lane, overtake or turn left/right.\n"
+    "Reasoning: Explain in only one sentence the reason for recommended action. Only talk about what is specifically about the scene. Avoid generic driving safety advice.\n"
+
 )
 
 USER_PROMPT: json = {
@@ -152,12 +153,19 @@ def verbose_print(*args, **kwargs) -> None:
     if verbose:
         print(*args, **kwargs)
 
-def set_custom(custom: str) -> None:
+def set_custom(txt_file: str) -> None:
     global custom_str
-    file_path = Path(custom)
-    if not file_path.lower().endswith('.txt'):
+    if txt_file is None:
+        append_prompt()
+        return
+    file_path = Path(txt_file)
+    if not file_path.suffix.lower() == '.txt':
         raise ValueError("The file must be of type .txt")
-
-    with open(file_path, 'r') as file:
-        custom_str = file.read()
-        append_prompt(custom_str)
+    try:
+        with open(file_path, 'r') as file:
+            custom_str = file.read()
+            append_prompt(custom_str)
+    except FileNotFoundError:
+        print(f"Error: The file '{file_path}' does not exist.")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")

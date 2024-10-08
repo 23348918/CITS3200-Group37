@@ -1,7 +1,7 @@
 import common
 from common import verbose_print
 from pathlib import Path
-from utils import get_file_dict, encode_image, encode_video
+from utils import get_file_dict, encode_image, encode_video, create_dynamic_response_model
 from process import generate_csv_output
 import time
 import json
@@ -89,6 +89,8 @@ def export_batch(batch_id: str) -> None:
 
     response_bytes: bytes = common.chatgpt_client.files.content(output_file_id).read()
     response_dicts: list[dict[str, str]] = bytes_to_dicts(response_bytes)
+    # TODO: Delete print
+    print(response_dicts)
     generate_csv_output(response_dicts)
 
 def bytes_to_dicts(response_bytes: bytes) -> list[dict[str, str]]:
@@ -103,13 +105,14 @@ def bytes_to_dicts(response_bytes: bytes) -> list[dict[str, str]]:
     response_str: str = response_bytes.decode("utf-8")
     response_lines: list[str] = response_str.splitlines()
     response_dicts: list = []
+    DynamicAnalysisResponse = create_dynamic_response_model(common.custom_str)
     for line in response_lines:
         json_obj: dict = json.loads(line)
         file_name: str = json_obj['id']
         model: str = json_obj['response']['body']['model']
         content: str = json_obj['response']['body']['choices'][0]['message']['content'].replace("*", "")
-        pattern: re.Pattern = re.compile(r'(' + '|'.join(common.AnalysisResponse.model_fields.keys()) + r'):\s*(.*?)\s*(?=\d+\.|$)', re.DOTALL | re.IGNORECASE)
-        matches:  list[tuple[str, str]] = pattern.findall(content)
+        pattern: re.Pattern = re.compile(r'(' + '|'.join(DynamicAnalysisResponse.model_fields.keys()) + r'):\s*(.*?)\s*(?=\d+\.|$)', re.DOTALL | re.IGNORECASE)
+        matches: list[tuple[str, str]] = pattern.findall(content)
         response_dict: dict[str, str] = {match[0].lower(): match[1].strip() for match in matches}
         response_dict['file_name'] = file_name
         response_dict['model'] = model
@@ -149,8 +152,8 @@ def generate_batch_file(file_dict: dict[str, Path], out_path: Path) -> None:
         out_path: The path to save the batch file."""
     with open(out_path, "w") as f:
         for label, file_path in file_dict.items():
-            if file_path.suffix not in common.IMAGE_EXTENSIONS:
-                verbose_print(f"Skipping {file_path}. Only image files are supported.")
+            if file_path.suffix not in common.VALID_EXTENSIONS:
+                verbose_print(f"Skipping {file_path}. Unsupported file format.")
                 continue
             json_entry: dict[str, str] = create_json_entry(label, file_path)
             json.dump(json_entry, f)
