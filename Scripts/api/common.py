@@ -3,6 +3,7 @@ from openai import OpenAI
 from typing import Tuple, Optional
 from anthropic import Anthropic
 from pydantic import BaseModel
+from pathlib import Path
 
 # Global Variables
 chatgpt_client: OpenAI = None
@@ -96,7 +97,7 @@ ARG_INFO = [
     },
     {
         "group": "exclusive",
-        "flags": ["-c", "--check"],
+        "flags": ["-ch", "--check"],
         "metavar": "BATCH_ID",
         "help": "Check the status of a batch."
     },
@@ -122,6 +123,11 @@ ARG_INFO = [
         "action": "store_true",
         "help": "Fully automated processing mode, from input to export of batch processing."
     },  
+    {
+        "flags": ["-c", "--custom"],
+        "metavar": "TXT-PATH",
+        "help": "Allows addition of custom prompts via a txt file path."
+    }, 
 ]
 
 # Global Functions
@@ -131,7 +137,6 @@ def append_prompt(custom_str: str = None) -> None:
         prompt = PROMPT + custom_str
     else:
         prompt = PROMPT
-    
 
 def set_verbose(value: bool = True) -> None:
     global verbose
@@ -147,6 +152,12 @@ def verbose_print(*args, **kwargs) -> None:
     if verbose:
         print(*args, **kwargs)
 
-def set_custom(string: str) -> None:
+def set_custom(custom: str) -> None:
     global custom_str
-    custom_str = string
+    file_path = Path(custom)
+    if not file_path.lower().endswith('.txt'):
+        raise ValueError("The file must be of type .txt")
+
+    with open(file_path, 'r') as file:
+        custom_str = file.read()
+        append_prompt(custom_str)
