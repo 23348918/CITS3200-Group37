@@ -43,18 +43,16 @@ IMAGE_EXTENSIONS: Tuple[str, ...] = (
 
 LLMS: list[str] = ["chatgpt", "gemini", "claude"]
 MAX_THREAD_WORKERS: int = 10
-MAX_OUTPUT_TOKENS: int = 100
+MAX_OUTPUT_TOKENS: int = 200
 
 PROMPT : str = (
     "You are a road safety visual assistant installed in a car. Your task is to analyze images of road scenes and provide recommendations for safe driving. Keep your response concise."
     "The user will provide you with an image or series of images to analyze."
-    "For each image or sub-image, use the template format to explain the following in least words:"
-    "Description: Describe what the car is currently doing. Then, describe the objects in the scene in few words, if any, focus on safety hazards, "
-    "road signs, traffic lights, road lines/marks, pedestrians, obstacles.\n"
-    "Action: In few words, give suggestion as to what action should be taken by the driver."
-    "Also include if driver can change lane, overtake or turn left/right.\n"
-    "Reasoning: Explain in only one sentence the reason for recommended action. Only talk about what is specifically about the scene. Avoid generic driving safety advice.\n"
-
+    "For each image or sub-image, use the template format to explain the following in least words, never leave :"
+    "description: Describe what the car is currently doing. Then, describe the objects in the scene in few words, if any, focus on safety hazards, "
+    "road signs, traffic lights, road lines/marks, pedestrians, obstacles."
+    "reasoning: Explain in only one sentence the reason for recommended action. Only talk about what is specifically about the scene. Avoid generic driving safety advice."
+    "action: In few words, give suggestion as to what action should be taken by the driver. Also include if driver can change lane, overtake or turn left/right. "
 )
 
 USER_PROMPT: json = {
@@ -135,6 +133,7 @@ ARG_INFO = [
 def append_prompt(custom_str: str = None) -> None:
     global prompt
     if custom_str is not None:
+        custom_str = custom_str.replace('\n', ' ')
         prompt = PROMPT + custom_str
     else:
         prompt = PROMPT

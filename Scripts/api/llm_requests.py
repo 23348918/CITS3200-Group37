@@ -73,6 +73,7 @@ def gemini_request(file_path: Path) -> dict[str, str]:
             response_schema = list[DynamicAnalysisResponse],
             max_output_tokens = common.MAX_OUTPUT_TOKENS)
             )
+    # TODO: Remove print statement
     print(response.text)
     response_dict: dict = response_to_dictionary(response.text, "models/gemini-1.5-pro")
     response_dict["file_name"] = file_path.name
@@ -110,6 +111,7 @@ def claude_request(file_path: Path) -> dict[str, str]:
         messages=[message]
     )
     full_response: dict = response.dict()
+    print(full_response)
     response_dict: dict = response_to_dictionary(full_response['content'][0]['text'], "models/claude-3-opus-20240229")
     response_dict["file_name"] = file_path.name
     return response_dict
@@ -124,7 +126,8 @@ def response_to_dictionary(response: str, model_name: str) -> dict[str, str]:
     Returns:
         The response as a dictionary."""
     response_dictionary: dict[str, str] = {"model": model_name}
-    for json_section in common.AnalysisResponse.model_fields.keys():
+    DynamicAnalysisResponse = create_dynamic_response_model(common.custom_str)
+    for json_section in DynamicAnalysisResponse.model_fields.keys():
         match: re.Match[str] = re.search(f'"{json_section}":\\s*"([^"]*)', response)
         response_dictionary[json_section] = match.group(1) if match else ""
     return response_dictionary

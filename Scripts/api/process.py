@@ -24,6 +24,7 @@ def process_model(model_name: str, file_path_str: str) -> None:
         file_path_str: The path to the file or directory to process.
     """
     verbose_print(f"Processing model: {model_name}")
+    verbose_print(f"Prompt Used: {common.prompt}")
     if model_name not in common.LLMS:
         print("Invalid model name")
         sys.exit(1)
