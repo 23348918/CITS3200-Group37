@@ -11,14 +11,11 @@ def authenticate(model_name: str) -> object:
 
     Args:
         auth_path: Path to the file containing the API key.
-
-    Returns:
-        An authenticated client object for the corresponding LLM (either OpenAI or Claude).
     """
     script_dir = Path(__file__).parent
     file_path = script_dir / ".." / ".." / "Private" / "ClientKeys" / f"{model_name}-api.txt"
     if not file_path.exists():
-        raise(f"{file_path} does not exist.") 
+        raise FileNotFoundError(f"{file_path} does not exist.")
     try:
         with open(file_path, 'r') as file:
             api_key: str = file.read().strip()
@@ -38,7 +35,6 @@ def authenticate(model_name: str) -> object:
                 print(f"Unrecognized auth path: {file_path}. Please include 'chatgpt' or 'claude' in the file name.")
                 sys.exit(1)
     except Exception as e:
-        print(f"Authentication failed: {e}")
-        sys.exit(1)
+        raise Exception(f"Authentication failed: {e} for {model_name}")
 
     verbose_print(f"Authenicated with {model_name} successfully")
