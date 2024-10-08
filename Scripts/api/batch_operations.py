@@ -106,12 +106,13 @@ def bytes_to_dicts(response_bytes: bytes) -> list[dict[str, str]]:
     response_lines: list[str] = response_str.splitlines()
     response_dicts: list = []
     DynamicAnalysisResponse = create_dynamic_response_model(common.custom_str)
+    print("DynamicAnalysisResponse.model_fields:", DynamicAnalysisResponse.model_fields)
     for line in response_lines:
         json_obj: dict = json.loads(line)
         file_name: str = json_obj['id']
         model: str = json_obj['response']['body']['model']
         content: str = json_obj['response']['body']['choices'][0]['message']['content'].replace("*", "")
-        pattern: re.Pattern = re.compile(r'(' + '|'.join(DynamicAnalysisResponse.model_fields.keys()) + r'):\s*(.*?)\s*(?=\d+\.|$)', re.DOTALL | re.IGNORECASE)
+        pattern: re.Pattern = re.compile(r'(\w+):\s*(.*?)(?=\n\w+:|$)', re.DOTALL | re.IGNORECASE)
         matches: list[tuple[str, str]] = pattern.findall(content)
         response_dict: dict[str, str] = {match[0].lower(): match[1].strip() for match in matches}
         response_dict['file_name'] = file_name
