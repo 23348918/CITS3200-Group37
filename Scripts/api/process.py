@@ -47,7 +47,7 @@ def process_model(model_name: str, file_path_str: str) -> None:
 
     generate_csv_output(request_output)
 
-def generate_csv_output(data: dict[str, Any], output_directory: Optional[Path] = None) -> None:
+def generate_csv_output(data: dict[str, Any], output_directory: Optional[Path] = None):
     """Create a CSV file from the given data.
     
     Args:
@@ -72,8 +72,9 @@ def generate_csv_output(data: dict[str, Any], output_directory: Optional[Path] =
     df: pd.DataFrame = pd.DataFrame(rows)
     if output_directory is None:
         csv_file_path = ask_save_location("result.csv")
-    else:
-        csv_file_path = output_directory / "result.csv"
+    
+    if not csv_file_path:
+        return False
         
         
     try:

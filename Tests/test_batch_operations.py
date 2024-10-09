@@ -1,5 +1,11 @@
+# Test cases for batch_operations.py
+# To run the tests, run the following command (add -v for more verbose output):
+#     python3 -m unittest Tests/test_batch_operations.py
+# or
+#     pytest Tests/test_batch_operations.py
 
 
+# NOTE: Delete later
 # generate batch file - generates a jsonl file for a batch of files to be processed
 # upload batch file - uploads the created json entry to the server. used in generate batch file and returns the batch id
 # batch process_chatgpt - calls generate batch file and upload batch file
@@ -20,75 +26,173 @@
     # Case 10: Export Batch failure
     # Case 11: Process Batch with auto success
     # Case 12: Process Batch with auto failure
-
-
-
-import unittest
-from unittest.mock import patch, MagicMock, mock_open
-from pathlib import Path
-import os
 import sys
-import pytest
+import os
 
 # Add the Scripts/api directory to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'Scripts/api')))
-
-# Importing from 'batch_operations' (with 's')
+import unittest
+from unittest.mock import patch, MagicMock, mock_open
+from pathlib import Path
+import pytest
 from batch_operations import generate_batch_file, process_batch, check_batch, export_batch, list_batches, batch_process_chatgpt, upload_batch_file, get_file_dict
 from common import verbose_print
 from utils import get_file_dict, encode_image, encode_video, create_dynamic_response_model
 from process import generate_csv_output
+import tempfile
 
-class TestGPTBatchOperations(unittest.TestCase):
-    # Case 0: Get File Dict success
+class TestInputPath(unittest.TestCase):
+    
+    # Case 1: Successfully read input path and convert to dictionary to be procoessed into a jsonl file for batch processing
     def test_get_file_dict_success(self):
-        test_directory = Path("/home/dave/UWA/CITS3200-Group37/Tests/test_dir")
-        
-        expected_output = {'NO_speed_sign.png': Path('/home/dave/UWA/CITS3200-Group37/Tests/test_dir/NO_speed_sign.png'),
-                           'test_image.png': Path('/home/dave/UWA/CITS3200-Group37/Tests/test_dir/test_image.png')}
-        
+        test_directory = Path("/home/dave/UWA/CITS3200-Group37/Tests/TestFiles/ImagesDir")
+        expected_output = {'NO_speed_sign.png': Path(f"{test_directory}/NO_speed_sign.png"),
+                           'test_image.png': Path(f"{test_directory}/test_image.png"),}
         file_dict = get_file_dict(test_directory)
         self.assertEqual(file_dict, expected_output)
         
-    # Case 1: Get file dict failure due to invalid directory/file path
+    # Case 2: Fail to read input path and convert to dictionary due to invalid directory or file
     def test_get_file_dict_invalid_directory(self):
-        test_directory = Path("/home/dave/UWA/CITS3200-Group37/Tests/test_dir_invalid")
+        test_directory = Path("/home/dave/UWA/CITS3200-Group37/TestFiles/test_dir_invalid")
         with self.assertRaises(ValueError):
             get_file_dict(test_directory)
+
+    # Case 3: input path is a directory but no valid files in the directory
+    def test_get_file_dict_empty_directory(self):
+        test_directory = Path("/home/dave/UWA/CITS3200-Group37/Tests/TestFiles/EmptyDirTest")
+        with self.assertRaises(ValueError):
+            get_file_dict(test_directory)
+
+class TestFilesToJsonl(unittest.TestCase):
+    
+    # Case 4: generate batch file success from given file dictionary and output path
+    @patch('batch_operations.generate_batch_file', return_value = "Generate Batch Success")  # Mock generate_batch_file
+    def test_generate_batch_with_encoded_image(self, mock_generate_batch_file):
+        test_directory = Path("/home/dave/UWA/CITS3200-Group37/Tests/TestFiles/ImagesDir")
+        file_dict = get_file_dict(test_directory)
+        out_path = Path("/home/dave/UWA/CITS3200-Group37/Tests/TestFiles/Output/out_batch_file.jsonl")
+        result = mock_generate_batch_file(file_dict, out_path)
+        mock_generate_batch_file.assert_called_once_with(file_dict, out_path)
+        self.assertEqual(result, "Generate Batch Success")
+        
+    #Case 5: generate batch file failure due to invalid/empty output path
+    @patch('batch_operations.get_file_dict')  # Mock get_file_dict to return a valid file_dict
+    def test_generate_batch_with_invalid_file_path(self, mock_get_file_dict):
+        # Simulate a valid file_dict
+        mock_get_file_dict.return_value = {
+            'example_image.png': Path('/valid/path/example_image.png')
+        }
+
+        # Valid directory but invalid output path (invalid directory)
+        out_path = Path("/home/dave/UWA/CITS3200-Group37/Tests/TestFiles/InvalidOutPath/out_batch_file_invalid.jsonl")
+        with self.assertRaises(OSError):
+            generate_batch_file(mock_get_file_dict.return_value, out_path)
+        
+        # Test with an empty string path (which should also raise OSError)
+        out_path = Path("")
+        with self.assertRaises(OSError):
+            generate_batch_file(mock_get_file_dict.return_value, out_path)
+            
+    # Case 6: generate batch file with empty file dictionary
+    # technically not needed due to the check in get_file_dict. but if this function is used somewhere in the future, 
+    # this test will be useful
+    def test_generate_batch_with_empty_file_dict(self):
+        file_dict = {}
+        out_path = Path("/home/dave/UWA/CITS3200-Group37/Tests/TestFiles/Output/out_batch_file.jsonl")
+        with self.assertRaises(ValueError):
+            generate_batch_file(file_dict, out_path)
             
 
+class TestUploadJsonBatch(unittest.TestCase):
+    # Case 7: Test upload batch file success
+    @patch('batch_operations.upload_batch_file', return_value = "Upload Batch Success")  # Mock upload_batch_file
+    def test_upload_batch_file_success(self, mock_upload_batch_file):
+        batch_file_path = Path("/home/dave/UWA/CITS3200-Group37/Tests/TestFiles/Output/out_batch_file.jsonl")
+        result = mock_upload_batch_file(batch_file_path)
+        mock_upload_batch_file.assert_called_once_with(batch_file_path)
+        self.assertEqual(result, "Upload Batch Success")
+        
     
-    # # Case 1: Create JSON Entry success
-    # @patch('batch_operations.encode_image', return_value="encoded_image_data")  # Updated to 'batch_operations'
-    # @patch('batch_operations.common.prompt', "Test prompt")  # Updated to 'batch_operations'
-    # def test_create_json_entry_success(self, mock_encode_image):
-    #     # Mocking a correct file_dict structure
-    #     file_dict = {
-    #         "label": Path("test_image.jpg")
-    #     }
-    #     out_path = Path("out_batch_file.jsonl")
+    # Case 8: Test upload batch file failure due to invalid/empty file path
+    def test_upload_batch_file_invalid_file_path(self, ):
+        # Invalid file path
+        batch_file_path = Path("/home/dave/UWA/CITS3200-Group37/Tests/TestFiles/InvalidOutPath/out_batch_file_invalid.jsonl")
+        with self.assertRaises(FileNotFoundError):
+            upload_batch_file(batch_file_path)
+        
+        # Empty file path (which should also raise OSError)
+        batch_file_path = Path("")
+        with self.assertRaises(FileNotFoundError):
+            upload_batch_file(batch_file_path)
+    
+    # Case 9: Test upload batch with invalid format
+    def test_upload_batch_file_invalid_format(self):
+        # Invalid file format
+        batch_file_path = Path("/home/dave/UWA/CITS3200-Group37/Tests/TestFiles/Input/invalid_batch_format.txt")
+        with self.assertRaises(ValueError):
+            upload_batch_file(batch_file_path)
+    
+    #Case 10: Test upload batch file over the size limit
+    def test_upload_batch_file_over_size_limit(self):
+        # Create a temporary .jsonl file with 100 MB size
+        with tempfile.NamedTemporaryFile(delete=True, suffix='.jsonl') as temp_file:
+            # Write 100 MB of data to the file
+            temp_file.write(b'0' * (100 * 1024 * 1024))  # Write 100 MB of data
+            batch_file_path = Path(temp_file.name)  # Get the path of the temporary file
+        
+            with self.assertRaises(ValueError):
+                upload_batch_file(batch_file_path)
+            
+    
+    # Case 10: Test upload batch with empty file
+    def test_upload_batch_file_empty_file(self):
+        batch_file_path = Path("/home/dave/UWA/CITS3200-Group37/Tests/TestFiles/Input/empty_batch_file.jsonl")
+        with tempfile.NamedTemporaryFile(delete=True, suffix='.jsonl') as temp_file:
+            # empty file
+            batch_file_path = Path(temp_file.name)  # Get the path of the temporary file
+            with self.assertRaises(ValueError):
+                upload_batch_file(batch_file_path)
+        
+        
 
-    #     # Calling the generate_batch_file function with the correct file_dict
-    #     generate_batch_file(file_dict, out_path)
+class TestBatchProcessChatGPT(unittest.TestCase):
 
-    #     # Check if the file was written correctly (this assumes you are mocking file writing)
-    #     self.assertTrue(out_path.exists(), "Batch file should exist after generation.")
-    #     print("Test case for create_json_entry_success passed.")
+    #process -> batch_process_chatgpt -> upload_batch_file 
+    # Case 11: Test batch process success
+    @patch('batch_operations.upload_batch_file', return_value = "Upload Batch Success")  # Mock upload_batch_file
+    def test_process_batch_success(self, mock_upload_batch_file):
+        file_path_str = "/home/dave/UWA/CITS3200-Group37/Tests/TestFiles/ImagesDir"
+        process_batch(file_path_str, auto=False)
+        mock_upload_batch_file.assert_called_once() # ensure that the mock function was called
+        
+            
+    # Case 12: Test batch process with auto enabled
+    @patch('batch_operations.check_batch', return_value=("completed", "Processing success"))  # Mock check_batch
+    @patch('batch_operations.export_batch')  # Mock export_batch
+    @patch('batch_operations.upload_batch_file', return_value = "Batch ID")  # Mock upload_batch_file
+    def test_process_batch_auto_success(self, mock_upload_batch_file, mock_export_batch, mock_check_batch):
+        file_path_str = "/home/dave/UWA/CITS3200-Group37/Tests/TestFiles/ImagesDir"
+        process_batch(file_path_str, auto=True)
+        mock_upload_batch_file.assert_called_once()
+        self.assertGreaterEqual(mock_check_batch.call_count, 1)  # Ensure check_batch was called more than once
+        mock_export_batch.assert_called_once_with("Batch ID")  # Assert export_batch was called with the correct ID
+
+
+    # # Case 13: Test batch process with auto enabled and failure
+    # @patch('batch_operations.check_batch', return_value=("failed", "Processing failed"))  # Mock check_batch
+    # @patch('batch_operations.upload_batch_file', return_value = "Batch ID")  # Mock upload_batch_file
+    # def test_process_batch_auto_failure(self, mock_upload_batch_file, mock_check_batch):
+    #     file_path_str = "/home/dave/UWA/CITS3200-Group37/Tests/TestFiles/ImagesDir"
+    #     process_batch(file_path_str, auto=True)
+    #     mock_upload_batch_file.assert_called_once()
+    #     self.assertGreaterEqual(mock_check_batch.call_count, 1)
+        
+    
+class TestOthers(unittest.TestCase):
+    pass
 
 
 
-    # # Case 2: Upload JSON Entry success and return batch id
-    # @patch('batch_operation.open', new_callable=mock_open, read_data='batch_data')
-    # @patch('batch_operation.common.chatgpt_client.files.create')
-    # @patch('batch_operation.common.chatgpt_client.batches.create')
-    # def test_upload_batch_file_success(self, mock_batch_create, mock_file_create, mock_open_file):
-    #     mock_batch_create.return_value.id = "batch_id"
-    #     mock_file_create.return_value.id = "file_id"
-
-    #     batch_file_path = Path("test_batch.jsonl")
-    #     batch_id = upload_batch_file(batch_file_path)
-    #     self.assertEqual(batch_id, "batch_id")
-    #     print("Test case for upload_batch_file_success passed.")
 
     # # Case 3: Process Batch success
     # @patch('batch_operation.batch_process_chatgpt', return_value="batch_id")
@@ -191,6 +295,11 @@ class TestGPTBatchOperations(unittest.TestCase):
     #     mock_batch_process.assert_called_once()
     #     mock_check_batch.assert_called_once()
     #     print("Test case for process_batch_auto_failure_due_to_size_limit passed.")
+
+        
+
+
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -29,7 +29,7 @@ def process_batch(file_path_str: str, auto: bool) -> None:
             time.sleep(common.WAITING_TIMER)
             status, status_message = check_batch(batch_id)
             verbose_print(f"{batch_id} status: {status} \t {status_message}")
-            while status not in common.PROCESS_STATUS:
+            while status == "in_progress":
                 time.sleep(common.WAITING_TIMER)
                 status, status_message = check_batch(batch_id)
             export_batch(batch_id)
@@ -44,6 +44,19 @@ def print_check_batch(batch_id: str) -> None:
     print(f"{batch_id} status: {status} \t {status_message}")
 
 def check_batch(batch_id: str) -> tuple[str, str]:
+    
+    
+    batch_status_dict = {
+    "validating": "the input file is being validated before the batch can begin",
+    "failed": "the input file has failed the validation process",
+    "in_progress": "the input file was successfully validated and the batch is currently being run",
+    "finalizing": "the batch has completed and the results are being prepared",
+    "completed": "the batch has been completed and the results are ready",
+    "expired": "the batch was not able to be completed within the 24-hour time window",
+    "cancelling": "the batch is being cancelled (may take up to 10 minutes)",
+    "cancelled": "the batch was cancelled"
+}
+
     """Checks the status of a batch process by its batch ID.
     
     Args:
@@ -52,16 +65,22 @@ def check_batch(batch_id: str) -> tuple[str, str]:
     Returns:
         The status and status message of the batch.
     """
-    verbose_print(f"Checking status of batch {batch_id}...")
     try:
         batch_status = common.chatgpt_client.batches.retrieve(batch_id)
+        verbose_print(f"Checking status of batch {batch_id}\t {batch_status.status}")
+
     except Exception as e:
         print(f"Batch ID {batch_id} not found: {e}")
         sys.exit(1)
+    
     if batch_status.error_file_id:
         status_message: str = "Processing failed"
+    # elif batch_status.status == "completed":
+    #     status_message: str = "Processing success. You can now extract the file the file"
+    # else:
+    #     status_message: str = "Processing..."   
     else:
-        status_message: str = "Processing success. You can now extract the file the file"
+        status_message: str = batch_status_dict[batch_status.status]
     return (batch_status.status, status_message)
 
 def export_batch(batch_id: str) -> None:
@@ -89,9 +108,18 @@ def export_batch(batch_id: str) -> None:
 
     response_bytes: bytes = common.chatgpt_client.files.content(output_file_id).read()
     response_dicts: list[dict[str, str]] = bytes_to_dicts(response_bytes)
-    if generate_csv_output(response_dicts):
+    
+    extportResult = generate_csv_output(response_dicts)
+    
+    
+    
+    if extportResult:
         delete_exported_files(common.chatgpt_client, batch_results)
         verbose_print(f"Cleaning up batch relevant files.")
+    else:
+        print(f"Cancelled. BatchID: {batch_id}" )
+        print(f"To export results using the export command, see python3 main.py -h for more info.")    
+    
 
 def bytes_to_dicts(response_bytes: bytes) -> list[dict[str, str]]:
     """Converts a byte response to a list of dictionaries.
@@ -151,14 +179,22 @@ def generate_batch_file(file_dict: dict[str, Path], out_path: Path) -> None:
     Args: 
         file_dict: The dictionary of files to include in the batch.
         out_path: The path to save the batch file."""
-    with open(out_path, "w") as f:
-        for label, file_path in file_dict.items():
-            if file_path.suffix not in common.VALID_EXTENSIONS:
-                verbose_print(f"Skipping {file_path}. Unsupported file format.")
-                continue
-            json_entry: dict[str, str] = create_json_entry(label, file_path)
-            json.dump(json_entry, f)
-            f.write("\n")
+    if not file_dict:
+        raise ValueError("No files found in the directory.")
+    try:
+        with open(out_path, "w") as f:
+            for label, file_path in file_dict.items():
+                # This assumes filtering by file extensions is already done, but add here for extra safety
+                if file_path.suffix not in common.VALID_EXTENSIONS:
+                    verbose_print(f"Skipping {file_path}. Unsupported file format.")
+                    continue
+                json_entry = create_json_entry(label, file_path)
+                json.dump(json_entry, f)
+                f.write("\n")  # Ensure each JSON entry is on a new line
+
+    except OSError as e:
+        raise OSError(f"Failed to write the batch file: {e}")
+    
     if not os.path.exists(out_path):
         raise FileNotFoundError(f"Batch file not found at {out_path}")
 
@@ -214,9 +250,18 @@ def upload_batch_file(batch_file_path: Path) -> str:
     Returns:
         The ID of the uploaded batch.
     """
+    if not batch_file_path.is_file():
+        raise FileNotFoundError(f"Batch file not found: {batch_file_path}")
+    
+    if not batch_file_path.suffix.lower() == '.jsonl':
+        raise ValueError(f"Invalid file type: {batch_file_path}. Only '.jsonl' files are accepted.")
+    
     if os.path.getsize(batch_file_path) > 99 * 1024 * 1024:
         print("Processing limit of 99MB reached. Please reduce number of files to be processed.\nTerminating....")
-        sys.exit(1)
+        raise ValueError("File size exceeds the limit of 99MB.")
+    elif os.path.getsize(batch_file_path) == 0:
+        raise ValueError("File is empty.")
+    
 
 
     try:
@@ -227,8 +272,8 @@ def upload_batch_file(batch_file_path: Path) -> str:
             )
     
     except FileNotFoundError:
-        print(f"Error: File not found at {batch_file_path}. Please check the file path.")
-        raise
+        print(f"Error: File not found: {batch_file_path}.")
+        raise 
     except PermissionError:
         print(f"Error: Permission denied for file {batch_file_path}.")
         raise

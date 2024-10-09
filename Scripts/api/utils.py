@@ -93,7 +93,7 @@ def check_file_size(file_path: str) -> bool:
         return False
     return True
 
-def ask_save_location(default_filename: str) -> str:
+def ask_save_location(default_filename: str):
     """Prompt the user to select a location to save a file. If no location is selected, return a default path.
 
     Args:
@@ -118,8 +118,7 @@ def ask_save_location(default_filename: str) -> str:
     )
     
     if not file_path:
-        print("Cancelled. Exiting.")
-        sys.exit(0)
+        return False
     return file_path
 
 def get_file_dict(directory_path: Path) -> dict[str, Path]:
@@ -143,7 +142,9 @@ def get_file_dict(directory_path: Path) -> dict[str, Path]:
         for file_path in directory_path.glob('*'):
             if file_path.is_file() and file_path.suffix in common.VALID_EXTENSIONS:
                 file_dict[file_path.name] = file_path
-        return file_dict
+    if not file_dict:
+        raise ValueError(f"No valid files found in {directory_path}")
+    return file_dict
 
 def get_media_type(file_path: Path) -> str:
     """Determine the media type based on the file extension.
