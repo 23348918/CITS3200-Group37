@@ -21,7 +21,7 @@ class AnalysisResponse(BaseModel):
 # Constants
 WAITING_TIMER: int = 15  # Waiting timer in seconds
 
-PROCESS_STATUS : list = ["completed", "failed", "cancelled", "expired"]
+PROCESS_STATUS : list = ["in_progress", "finalizing", "validating"]
 
 VALID_EXTENSIONS: Tuple[str, ...] = (
     '.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif',

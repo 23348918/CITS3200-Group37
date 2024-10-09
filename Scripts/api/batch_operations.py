@@ -29,10 +29,13 @@ def process_batch(file_path_str: str, auto: bool) -> None:
             time.sleep(common.WAITING_TIMER)
             status, status_message = check_batch(batch_id)
             verbose_print(f"{batch_id} status: {status} \t {status_message}")
-            while status == "in_progress":
+            while status in common.PROCESS_STATUS:
                 time.sleep(common.WAITING_TIMER)
                 status, status_message = check_batch(batch_id)
-            export_batch(batch_id)
+            if status == "completed":
+                export_batch(batch_id)
+            else:
+                raise RuntimeError(f"Batch processing failed: {status}: {status_message}")
 
 def print_check_batch(batch_id: str) -> None:
     """Prints the status of a batch process by checking its batch ID.
