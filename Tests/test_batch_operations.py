@@ -40,6 +40,7 @@ from common import verbose_print
 from utils import get_file_dict, encode_image, encode_video, create_dynamic_response_model
 from process import generate_csv_output
 import tempfile
+import openai
 
 class TestInputPath(unittest.TestCase):
     
@@ -178,14 +179,55 @@ class TestBatchProcessChatGPT(unittest.TestCase):
         mock_export_batch.assert_called_once_with("Batch ID")  # Assert export_batch was called with the correct ID
 
 
-    # # Case 13: Test batch process with auto enabled and failure
+    # Case 13: Test batch process with auto enabled and different failure cases
+    @patch('batch_operations.check_batch', side_effect=[
+        ("failed", "Processing failed"), 
+        ("expired", "Processing expired"),
+        ("cancelled", "Processing cancelled")
+    ])  # Mock check_batch to return different statuses
+    @patch('batch_operations.upload_batch_file', return_value="Batch ID")  # Mock upload_batch_file
+    def test_process_batch_auto_failure(self, mock_upload_batch_file, mock_check_batch):
+        file_path_str = "/home/dave/UWA/CITS3200-Group37/Tests/TestFiles/ImagesDir"
+        
+        for status, message in [("failed", "Processing failed"), 
+                                ("expired", "Processing expired"), 
+                                ("cancelled", "Processing cancelled")]:
+            
+            mock_upload_batch_file.reset_mock()
+            mock_check_batch.reset_mock()
+            mock_check_batch.return_value = (status, message)  
+            
+            with self.assertRaises(RuntimeError) as context:  # Check if RuntimeError is raised
+                process_batch(file_path_str, auto=True)
+
+            mock_upload_batch_file.assert_called_once()
+            
+            self.assertGreaterEqual(mock_check_batch.call_count, 1)
+            
+            self.assertIn("Batch processing failed", str(context.exception))
+            
     # @patch('batch_operations.check_batch', return_value=("failed", "Processing failed"))  # Mock check_batch
     # @patch('batch_operations.upload_batch_file', return_value = "Batch ID")  # Mock upload_batch_file
-    # def test_process_batch_auto_failure(self, mock_upload_batch_file, mock_check_batch):
+    # @patch('batch_operations.export_batch')  # Mock export_batch
+    # def test_process_batch_auto_failure(self, mock_upload_batch_file, mock_check_batch, Mock_export_batch):
     #     file_path_str = "/home/dave/UWA/CITS3200-Group37/Tests/TestFiles/ImagesDir"
-    #     process_batch(file_path_str, auto=True)
-    #     mock_upload_batch_file.assert_called_once()
-    #     self.assertGreaterEqual(mock_check_batch.call_count, 1)
+    #     mock_check_batch.return_value = {"failed": "Processing failed", 
+    #                                      "expired": "Processing expired",
+    #                                      "cancelled": "Processing cancelled",
+    #                                      "cancellied": "Processing cancelled"
+    #                                      }
+    #     for each in mock_check_batch.return_value:
+    #         with self.assertRaises(RuntimeError):
+    #             process_batch(file_path_str, auto=True)
+    #             mock_upload_batch_file.assert_called_once()
+    #             self.assertGreaterEqual(mock_check_batch.call_count, 1)
+    #             Mock_export_batch.assert_not_called()
+    #             self.assertEqual(mock_check_batch.return_value[each], mock_check_batch.return_value[each])
+    #     # with self.assertRaises(RuntimeError):
+    #     #     process_batch(file_path_str, auto=True)
+    #     #     mock_upload_batch_file.assert_called_once()
+    #     #     self.assertGreaterEqual(mock_check_batch.call_count, 1)
+        
         
     
 class TestOthers(unittest.TestCase):
@@ -246,15 +288,7 @@ class TestOthers(unittest.TestCase):
     #         export_batch("batch_id")
     #     print("Test case for export_batch_failure passed.")
 
-    # # Case 8: Process Batch with auto failure
-    # @patch('batch_operation.batch_process_chatgpt', return_value="batch_id")
-    # @patch('batch_operation.check_batch', return_value=("failed", "Processing failed"))
-    # def test_process_batch_auto_failure(self, mock_check_batch, mock_batch_process):
-    #     process_batch("test_dir", auto=True)
-    #     mock_batch_process.assert_called_once()
-    #     mock_check_batch.assert_called_once()
-    #     print("Test case for process_batch_auto_failure passed.")
-    
+    # # 
     
     #     # Case 9: Export Batch success with valid file
     # @patch('batch_operation.common.chatgpt_client.batches.retrieve')
@@ -276,25 +310,9 @@ class TestOthers(unittest.TestCase):
     #         export_batch("batch_id")
     #     print("Test case for export_batch_failure_due_to_invalid_file passed.")
 
-    # # Case 11: Process Batch with auto success
-    # @patch('batch_operation.batch_process_chatgpt', return_value="batch_id")
-    # @patch('batch_operation.check_batch', return_value=("completed", "Processing success"))
-    # @patch('batch_operation.export_batch')
-    # def test_process_batch_auto_success(self, mock_export, mock_check_batch, mock_batch_process):
-    #     process_batch("test_dir", auto=True)
-    #     mock_batch_process.assert_called_once()
-    #     mock_check_batch.assert_called_once()
-    #     mock_export.assert_called_once()
-    #     print("Test case for process_batch_auto_success passed.")
 
-    # # Case 12: Process Batch with auto failure due to size limit
-    # @patch('batch_operation.batch_process_chatgpt', return_value="batch_id")
-    # @patch('batch_operation.check_batch', return_value=("failed", "Processing failed due to size limit"))
-    # def test_process_batch_auto_failure_due_to_size_limit(self, mock_check_batch, mock_batch_process):
-    #     process_batch("large_batch_dir", auto=True)
-    #     mock_batch_process.assert_called_once()
-    #     mock_check_batch.assert_called_once()
-    #     print("Test case for process_batch_auto_failure_due_to_size_limit passed.")
+
+
 
         
 
