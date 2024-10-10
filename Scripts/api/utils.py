@@ -93,7 +93,7 @@ def check_file_size(file_path: str) -> bool:
         return False
     return True
 
-def ask_save_location(default_filename: str) -> str:
+def ask_save_location(default_filename: str):
     """Prompt the user to select a location to save a file. If no location is selected, return a default path.
 
     Args:
@@ -103,22 +103,22 @@ def ask_save_location(default_filename: str) -> str:
     Returns:
         The path selected by the user or the default path if canceled.
     """
-    default_directory: str = os.path.join(os.path.dirname(os.path.abspath(__file__)))
+    currentDir = Path(os.path.dirname(os.path.abspath(__file__)))
+    default_directory: Path =  currentDir.parents[1]
 
     root = tk.Tk()
     root.withdraw()
     
     file_path = filedialog.asksaveasfilename(
-        defaultextension=".txt",
-        filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
+        defaultextension=".csv",
+        filetypes=[("CSV format", "*.csv"),("Text files", "*.txt"), ("All files", "*.*")],
         initialfile=default_filename,
         initialdir=default_directory,
         title="Select location to save your file"
     )
     
     if not file_path:
-        print("Cancelled. Exiting.")
-        sys.exit(0)
+        return False
     return file_path
 
 def get_file_dict(directory_path: Path) -> dict[str, Path]:
@@ -131,10 +131,19 @@ def get_file_dict(directory_path: Path) -> dict[str, Path]:
     Returns:
         A dictionary where keys are file names and values are full file paths.
     """
+    # NOTE : for validation and testing
+    if not directory_path.is_dir() and not directory_path.is_file():
+        raise ValueError(f"The provided path {directory_path} is not a valid path")
     file_dict: dict = {}
-    for file_path in directory_path.glob('*'):
-        if file_path.is_file() and file_path.suffix in common.VALID_EXTENSIONS:
-            file_dict[file_path.name] = file_path
+    if directory_path.is_file():
+        file_dict[directory_path.name] = directory_path
+        return file_dict
+    else :
+        for file_path in directory_path.glob('*'):
+            if file_path.is_file() and file_path.suffix in common.VALID_EXTENSIONS:
+                file_dict[file_path.name] = file_path
+    if not file_dict:
+        raise ValueError(f"No valid files found in {directory_path}")
     return file_dict
 
 def get_media_type(file_path: Path) -> str:
