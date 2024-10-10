@@ -236,16 +236,7 @@ class TestOthers(unittest.TestCase):
 
 
 
-    # # Case 3: Process Batch success
-    # @patch('batch_operation.batch_process_chatgpt', return_value="batch_id")
-    # @patch('batch_operation.check_batch', return_value=("completed", "Processing success"))
-    # @patch('batch_operation.export_batch')
-    # def test_process_batch_success(self, mock_export, mock_check_batch, mock_batch_process):
-    #     process_batch("test_dir", auto=True)
-    #     mock_batch_process.assert_called_once()
-    #     mock_check_batch.assert_called_once()
-    #     mock_export.assert_called_once()
-    #     print("Test case for process_batch_success passed.")
+
     
     # # Case 4: List Batches success
     # @patch('batch_operation.common.chatgpt_client.batches.list')

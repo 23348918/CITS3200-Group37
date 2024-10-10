@@ -1,6 +1,6 @@
 import argparse
 import common
-from common import set_verbose, set_prompt, set_custom
+from common import set_verbose, set_prompt, set_custom, verbose_print
 from auth import authenticate
 from process import process_model
 from batch_operations import print_check_batch, export_batch, list_batches, process_batch
@@ -67,7 +67,7 @@ def main():
         if (arg in ACTIONS and 
             getattr(args, arg) is not None and 
             getattr(args, arg) is not False):
-            print(arg, args)
+            verbose_print(arg, args)
             ACTIONS[arg](args)
 
 

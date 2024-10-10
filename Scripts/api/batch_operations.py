@@ -12,6 +12,10 @@ from openai import OpenAI
 import re
 
 
+
+sys.tracebacklimit = 0
+
+
 def process_batch(file_path_str: str, auto: bool) -> None:
     """Processes a batch of files located at the given file path, either automatically or manually.
 
