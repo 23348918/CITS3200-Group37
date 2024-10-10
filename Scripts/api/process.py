@@ -24,7 +24,7 @@ def process_model(model_name: str, file_path_str: str) -> None:
         file_path_str: The path to the file or directory to process.
     """
     verbose_print(f"Processing model: {model_name}")
-    verbose_print(f"Prompt Used: {common.prompt}")
+    # verbose_print(f"Prompt Used: {common.prompt}")
     if model_name not in common.LLMS:
         print("Invalid model name")
         sys.exit(1)
@@ -55,15 +55,15 @@ def generate_csv_output(data: dict[str, Any], output_directory: Optional[Path] =
         output_directory: The directory to save the CSV file in. If None, prompts user for location
     """
     rows: list[dict[str, Any]] = []
+    print(data)
 
     for single_data in data:
         row = {
                 'File_name': single_data['file_name'],
                 'Model': single_data['model'],
-                'Description': single_data['description'],
-                'Reasoning': single_data['reasoning'],
-                'Action': single_data['action']
         }
+        for response_column in common.AnalysisResponse.model_fields.keys():
+            row[response_column] = single_data[response_column]
 
         for key, value in single_data.items():
             if key not in row:

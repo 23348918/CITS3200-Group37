@@ -1,13 +1,12 @@
 import argparse
 import common
-from common import set_verbose, set_prompt, set_custom, verbose_print
+from common import set_verbose, set_custom, verbose_print
 from auth import authenticate
 from process import process_model
 from batch_operations import print_check_batch, export_batch, list_batches, process_batch
 import sys
 
 ACTIONS: dict[str, callable] = {
-    "prompt": lambda args: set_prompt(args.prompt),
     "process": lambda args: process_model(args.llm_model, args.process),
     "check": lambda args: print_check_batch(args.check),
     "export": lambda args: export_batch(args.export),
@@ -58,9 +57,8 @@ def main():
         set_verbose()
 
     authenticate(args.llm_model)
-
-    # TODO: Integrate with new format
-    set_custom(args.custom)
+    if args.custom:
+        set_custom(args.custom)
 
     # Execute corresponding action from the ACTIONS dictionary
     for arg in vars(args):

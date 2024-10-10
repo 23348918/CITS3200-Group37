@@ -1,3 +1,1 @@
-Speed: What speed should you travel at? In kilometers per hour
-Frame: What frame should you stop if relevant (a single number or N/A)
-Altered: Has the video been sped up? (yes or no)
+speed: What speed should you travel at? In kilometers per hour

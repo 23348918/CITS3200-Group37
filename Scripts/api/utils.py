@@ -1,79 +1,11 @@
 import tkinter as tk
 from tkinter import filedialog
 from pathlib import Path
-from pydantic import BaseModel, create_model
-from typing import List, Dict
-from common import AnalysisResponse
 import common
 import cv2
 import base64
 import os
-import sys
 
-def create_dynamic_response_model(custom_str: str) -> BaseModel:
-    """
-    Creates a dynamic class for custom responses
-
-    Args:
-        custom_str (str): String containing each of the custom prompts
-
-    Return:
-        BaseModel: custom class of the DynamicAnalysisResponse model
-    """
-
-    if custom_str is None:
-        return AnalysisResponse
-    
-    dynamic_fields = {}
-    
-    lines = custom_str.splitlines()
-    for line in lines:
-        if ": " in line:
-            first_word = line.split(": ")[0].strip()
-            dynamic_fields[first_word.lower()] = (str, ...)
-    
-    DynamicAnalysisResponse = create_model(
-        'DynamicAnalysisResponse',  # Name of the new model
-        **dynamic_fields,           # Unpack dynamic fields
-        __base__=AnalysisResponse    # Inherit from the base class
-    )
-    
-    return DynamicAnalysisResponse
-
-def extract_dynamic_fields(parts: List[str]) -> Dict[str, str]:
-        """
-        Uses the custom parts of LLM response to append to the response dictionary
-
-        Args:
-            parts: custom responses from the LLM model
-
-        Returns:
-            dict: containing each of the custom values
-        """
-        dynamic_fields = {}
-        for part in parts[3:]:
-            if ": " in part:
-                key, value = part.split(": ", 1)
-                dynamic_fields[key.strip()] = value.strip()
-        return dynamic_fields
-
-def read_customs(file_path: str):
-    """
-    Reads custom inputs from cli to be used for csv output
-
-    Args:
-        file_path (str): The path to the txt file that represents custom inputs.
-
-    Returns:
-        str: formatted string of content
-
-    """
-    if not file_path.lower().endswith('.txt'):
-        raise ValueError("The file must be of type .txt")
-
-    with open(file_path, 'r') as file:
-        contents = file.read()
-    return contents
 
 def check_file_size(file_path: str) -> bool:
     """
@@ -89,7 +21,7 @@ def check_file_size(file_path: str) -> bool:
     batch_file_size = os.path.getsize(file_path)
     file_limit = 99*1024*1024
     if batch_file_size >= file_limit:
-        print(f"Processing limit of 99MB reached. Please reduce number of files to be processed.\nTerminating....")
+        print("Processing limit of 99MB reached. Please reduce number of files to be processed.\nTerminating....")
         return False
     return True
 

@@ -122,10 +122,10 @@ def export_batch(batch_id: str) -> None:
     
     if extportResult:
         delete_exported_files(common.chatgpt_client, batch_results)
-        verbose_print(f"Cleaning up batch relevant files.")
+        verbose_print("Cleaning up batch relevant files.")
     else:
         print(f"Cancelled. BatchID: {batch_id}" )
-        print(f"To export results using the export command, see python3 main.py -h for more info.")    
+        print("To export results using the export command, see python3 main.py -h for more info.")    
     
 
 def bytes_to_dicts(response_bytes: bytes) -> list[dict[str, str]]:
