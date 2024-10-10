@@ -136,6 +136,33 @@ Special thanks to the University of Western Australia and our client for providi
 - https://www.youtube.com/watch?v=lXV2PQgbGAs
 - https://github.com/JinkyuKimUCB/explainable-deep-driving/blob/master/data/Sample.csv
 
+# Image References for Overlay Feature
+
+Wet-Filter:
+![Natural Rain PNG](https://www.transparentpng.com/thumb/raindrops/natural-rain-png-images-35.png)
+
+Image source: ["Natural Rain PNG Images" by transparentpng.com](https://www.transparentpng.com/details/natural-rain-images_2098.html), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+
+Lens-Flare:
+![Png Format Images Of Lens Flare](https://www.freeiconspng.com/uploads/png-format-images-of-lens-flare-16.png)
+
+Image source: ["Png Format Images Of Lens Flare" by freeiconspng.com](https://www.freeiconspng.com/img/46213), **licensed for personal use only**.
+
+Fog:
+![Smoke effect, fume, fog](https://www.freeiconspng.com/uploads/smoke-028-2.png)
+
+Image source: ["Smoke effect, fume, fog" by freeiconspng.com](https://www.freeiconspng.com/img/515), **licensed for personal use only**.
+
+Rain:
+![Browse and Download Rain PNG Pictures](https://www.freeiconspng.com/uploads/rain-png-transparent-9.png)
+
+Image source: ["Browse and Download Rain PNG Pictures" by freeiconspng.com](https://www.freeiconspng.com/img/34459), **licensed for personal use only**.
+
+Graffiti:
+![Black Graffiti Tag](https://www.cleanpng.com/png-black-graffiti-tag-515.html)
+
+Image source: ["Black Graffiti Tag" by Cleanpng.com](https://www.cleanpng.com/png-black-graffiti-tag-515.html).
+
 
 
 
