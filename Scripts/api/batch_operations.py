@@ -13,8 +13,6 @@ import re
 
 
 
-sys.tracebacklimit = 0
-
 
 def process_batch(file_path_str: str, auto: bool) -> None:
     """Processes a batch of files located at the given file path, either automatically or manually.
@@ -77,8 +75,8 @@ def check_batch(batch_id: str) -> tuple[str, str]:
         verbose_print(f"Checking status of batch {batch_id}\t {batch_status.status}")
 
     except Exception as e:
-        print(f"Batch ID {batch_id} not found: {e}")
-        sys.exit(1)
+        raise Exception(f"Check Batch failed: \n{e.body}") from None
+
     
     if batch_status.error_file_id:
         status_message: str = "Processing failed"
@@ -99,19 +97,26 @@ def export_batch(batch_id: str) -> None:
     verbose_print(f"Exporting batch {batch_id}...")
     try:
         batch_results: OpenAI = common.chatgpt_client.batches.retrieve(batch_id)
-    except Exception as e:
-        print(f"Error retrieving batch results: {e}")
+    except openai.AuthenticationError as e: #authention error
+        raise ValueError(f"Export Batch Failed: {e.response} {e.code}\n{e.body}") from e
+    except openai.BadRequestError as e: # bad request error - no batchID exists
+        raise NameError(f"Export Batch Failed: {e.param} {e.code}\n{e.body}") from None
+    except Exception as e: # for all other error issues
+        raise Exception(f"Error exporting batche: {e}") from None
+    
+    if batch_results.error_file_id: # exporting a batch result that failed
+        print(f"Batch ID:{batch_id} Batch status: {batch_results.status} - failed. Cannot export results. \nTerminating....")
+        delete_exported_files(common.chatgpt_client, batch_results)
         sys.exit(1)
-    if batch_results.error_file_id:
-        print(f"Batch processing was unsuccessful for {batch_id}.")
-        output_file_id: str = batch_results.error_file_id
-    else:
-        output_file_id: str = batch_results.output_file_id
+        
+
+    
+    output_file_id: str = batch_results.output_file_id
     try:
         common.chatgpt_client.files.retrieve(output_file_id)
-    except Exception:
-        print("You can only export the file once. Please rerun the process to re-export the results again.")
-        sys.exit(1)
+    except Exception as e:
+        raise Exception(e) from None
+
 
     response_bytes: bytes = common.chatgpt_client.files.content(output_file_id).read()
     response_dicts: list[dict[str, str]] = bytes_to_dicts(response_bytes)
@@ -158,11 +163,17 @@ def bytes_to_dicts(response_bytes: bytes) -> list[dict[str, str]]:
 
 def list_batches() -> None:
     """Lists the past 20 batches and their status'."""
-    verbose_print("Listing all batches.")
-    batch_list: list = common.chatgpt_client.batches.list(limit=20)
-    for item in batch_list:
-        result: str = "Batch process success." if not item.error_file_id else "Batch process failed"
-        print(f"Batch ID: {item.id}\tStatus: {item.status}\t result:{result}")
+    try:
+        verbose_print("Listing all batches.")
+        batch_list: list = common.chatgpt_client.batches.list(limit=20)
+        for item in batch_list:
+            result: str = "Batch process success." if not item.error_file_id else "Batch process failed"
+            print(f"Batch ID: {item.id}\tStatus: {item.status}\t result:{result}")
+    except openai.AuthenticationError as e:
+        # Raise the original AuthenticationError as a ValueError
+        raise ValueError(f"List Batch Failed: {e.response} {e.code}\n{e.body}") from e
+    except Exception as e: # for all other error issues
+        raise Exception(f"Error listing batches: {e}") from None
 
 def batch_process_chatgpt(dir_path: Path) -> str:
     """Processes a batch of files located at the given directory path.
@@ -287,6 +298,7 @@ def upload_batch_file(batch_file_path: Path) -> str:
     except openai.APIError as e:
         print(f"Error uploading batch file: {e}")
         raise
+    
 
     batch_id: str = common.chatgpt_client.batches.create(
         input_file_id=batch_input_file.id,
@@ -310,13 +322,31 @@ def delete_exported_files(client: OpenAI, batch_results) -> None:
 
 
     if batch_results.input_file_id:
-        client.files.delete(batch_results.input_file_id)
-        # print (batch_results.input_file_id)
+        # client.files.delete(batch_results.input_file_id)
+        try:
+            common.chatgpt_client.files.delete(batch_results.input_file_id)
+            verbose_print(f"Cleaning input file")
+        except Exception as e:
+            pass
 
     if batch_results.output_file_id:
-        client.files.delete(batch_results.output_file_id)
-        # print (batch_results.output_file_id)
+        # client.files.delete(batch_results.output_file_id)
+        try:
+            common.chatgpt_client.files.delete(batch_results.output_file_id)
+            verbose_print(f"Cleaing output file")
+
+        except Exception as e:
+            pass
 
     if batch_results.error_file_id:
-        client.files.delete(batch_results.error_file_id)
-        # print (batch_results.error_file_id)
+        # client.files.delete(batch_results.error_file_id)
+        try:
+            common.chatgpt_client.files.delete(batch_results.error_file_id)
+            verbose_print(f"Cleaing error file")
+
+        except Exception as e:
+            pass
+            
+            
+    
+    

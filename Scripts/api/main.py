@@ -5,6 +5,8 @@ from auth import authenticate
 from process import process_model
 from batch_operations import print_check_batch, export_batch, list_batches, process_batch
 import sys
+sys.tracebacklimit = 0 # Disable traceback for non-verbose mode
+
 
 ACTIONS: dict[str, callable] = {
     "prompt": lambda args: set_prompt(args.prompt),
@@ -56,6 +58,7 @@ def main():
 
     if args.verbose:
         set_verbose()
+        sys.tracebacklimit = 1 # Enable traceback for verbose mode
 
     authenticate(args.llm_model)
 
