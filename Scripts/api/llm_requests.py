@@ -65,16 +65,29 @@ def gemini_request(file_path: Path) -> dict[str, str]:
     else:
         file = Image.open(file_path)
 
-    model = genai.GenerativeModel(model_name="gemini-1.5-flash")
+    model = genai.GenerativeModel(model_name="gemini-1.5-pro")
+    safe = [
+        {
+            "category": "HARM_CATEGORY_DANGEROUS",
+            "threshold": "BLOCK_NONE",
+        },
+        {
+            "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+            "threshold": "BLOCK_NONE",
+        },
+    ]
+
     response: str = model.generate_content(
         [file, common.prompt],
         generation_config=genai.GenerationConfig(
             response_mime_type="application/json",
-            temperature=0.4,
-            response_schema = common.AnalysisResponse,
-            max_output_tokens = common.MAX_OUTPUT_TOKENS_GEMINI)
+            temperature=0.3,
+            # I have actually no clue but for some reason response_schema breaks everything
+            # response_schema = common.AnalysisResponse,
+            max_output_tokens = common.MAX_OUTPUT_TOKENS_GEMINI),
+            safety_settings=safe
             )
-    response_dict: dict = response_to_dictionary(response.text, "gemini-1.5-flash")
+    response_dict: dict = response_to_dictionary(response.text, "gemini-1.5-pro")
     response_dict["file_name"] = file_path.name
     return response_dict
 
@@ -123,10 +136,13 @@ def response_to_dictionary(response: str, model_name: str) -> dict[str, str]:
         
     Returns:
         The response as a dictionary."""
-    print(response)
     response_dictionary: dict[str, str] = {"model": model_name}
     for json_section in common.AnalysisResponse.model_fields.keys():
         match: re.Match[str] = re.search(
-        f'"{json_section}":\\s*["]?([^",}}]*)["]?', response)
-        response_dictionary[json_section] = match.group(1) if match else ""
+            rf'(?i)["\']?({json_section})["\']?[:]\s*([\[]?(?:["\']?[\w ]*["\']?[,]?[ ]*)+[\]]?)', response)
+        match_output: str = match.group(2) if match else ""
+        if match_output[-1] == ",":
+            match_output = match_output[:-1]
+        match_output = match_output.replace('"', '').replace("'", '').replace('[', '').replace(']', '').strip()
+        response_dictionary[json_section] = match_output
     return response_dictionary

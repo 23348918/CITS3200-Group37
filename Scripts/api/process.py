@@ -55,7 +55,6 @@ def generate_csv_output(data: dict[str, Any], output_directory: Optional[Path] =
         output_directory: The directory to save the CSV file in. If None, prompts user for location
     """
     rows: list[dict[str, Any]] = []
-    print(data)
 
     for single_data in data:
         row = {

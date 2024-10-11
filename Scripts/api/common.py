@@ -13,19 +13,19 @@ custom_str: str = None
 prompt: str = None
 
 # Response Format
-# class AnalysisResponse(BaseModel):
-#     hazards: str
-#     vehicles: str
-#     signs: str
-#     road: str
-#     weather: str
-#     risk_rating: str
-#     action: str
-#     reason: str
 class AnalysisResponse(BaseModel):
-    description: str
-    reasoning: str
+    hazards: str
+    vehicles: str
+    signs: str
+    road: str
+    weather: str
+    risk_rating: str
     action: str
+    reason: str
+# class AnalysisResponse(BaseModel):
+#     description: str
+#     reasoning: str
+#     action: str
 
 # Constants
 WAITING_TIMER: int = 15  # Waiting timer in seconds
@@ -49,27 +49,27 @@ MAX_THREAD_WORKERS: int = 10
 MAX_OUTPUT_TOKENS_CLAUDE: int = 4096
 MAX_OUTPUT_TOKENS_GEMINI: int = 400
 
-# PROMPT : str = (
-# """You are a road safety visual assistant installed in a car. Your task is to analyze images of road scenes and provide recommendations for safe driving. The user will provide you with an image or images to analyze. Each section should be short (a few words). IMPORTANT! DO NOT RAMBLE OR PRODUCE LONG RESPONSES. DO NOT REPEAT YOURSELF. LIST AT MOST 3 THINGS. Produce the output as a json with this format:
-
-# hazards: List any potential hazards such as people, animals, obstacles. Use one or two words for each and use None is there aren't any.
-# vehicles: List the types of vehicles in the scene (e.g., cars, buses, motorcycles).
-# signs: Include any road signs, traffic lights, or road markings (e.g., stop sign, speed limit, traffic light).
-# road: Describe the road type (e.g., intersection, freeway, country road).
-# Weather: Describe the weather condition (e.g., clear, rainy, foggy). Only give one response.
-# risk_rating: Provide a risk rating for the situation on a scale of 1-10 where 1 is perfectly safe and 10 is life threatening.
-# action: Recommend the action the driver should take. Avoid statements that are too general such as "stay alert" or "remain catious" or "slow down". (eg: maintain speed, let pedestrians cross, prepare to turn left)
-# reason: Briefly explain the reason for the recommended action."""
-# )
 PROMPT : str = (
-    "You are a road safety visual assistant installed in a car. Your task is to analyze images of road scenes and provide recommendations for safe driving. Keep your response concise."
-    "The user will provide you with an image or series of images to analyze."
-    "For each image or sub-image, use the template format to explain the following in least words, always giving a result in quotations. "
-    "description: Describe what the car is currently doing. Then, describe the objects in the scene in few words, if any, focus on safety hazards, "
-    "road signs, traffic lights, road lines/marks, pedestrians, obstacles."
-    "reasoning: Explain in only one sentence the reason for recommended action. Only talk about what is specifically about the scene. Avoid generic driving safety advice."
-    "action: In few words, give suggestion as to what action should be taken by the driver. Also include if driver can change lane, overtake or turn left/right. "
+"""You are a road safety visual assistant installed in a car. Your task is to analyze images of road scenes and provide recommendations for safe driving. The user will provide you with an image or images to analyze. Each section should be short (a few words). IMPORTANT! DO NOT RAMBLE OR PRODUCE LONG RESPONSES. DO NOT REPEAT YOURSELF. LIST AT MOST 3 THINGS. Produce the output as a json with this format:
+
+hazards: List any potential hazards such as people, animals, obstacles. Use one or two words for each and use None is there aren't any.
+vehicles: List the types of vehicles in the scene (e.g., cars, buses, motorcycles).
+signs: Include any road signs, traffic lights, or road markings (e.g., stop sign, speed limit, traffic light).
+road: Describe the road type (e.g., intersection, freeway, country road).
+weather: Describe the weather condition (e.g., clear, rainy, foggy). Only give one response.
+risk_rating: Provide a risk rating for the situation on a scale of 1-10 where 1 is perfectly safe and 10 is life threatening.
+action: Recommend the action the driver should take. Avoid statements that are too general such as "stay alert" or "remain catious" or "slow down". (eg: maintain speed, let pedestrians cross, prepare to turn left)
+reason: Briefly explain the reason for the recommended action."""
 )
+# PROMPT : str = (
+#     "You are a road safety visual assistant installed in a car. Your task is to analyze images of road scenes and provide recommendations for safe driving. Keep your response concise."
+#     "The user will provide you with an image or series of images to analyze."
+#     "For each image or sub-image, use the template format to explain the following in least words, always giving a result in quotations. "
+#     "description: Describe what the car is currently doing. Then, describe the objects in the scene in few words, if any, focus on safety hazards, "
+#     "road signs, traffic lights, road lines/marks, pedestrians, obstacles."
+#     "reasoning: Explain in only one sentence the reason for recommended action. Only talk about what is specifically about the scene. Avoid generic driving safety advice."
+#     "action: In few words, give suggestion as to what action should be taken by the driver. Also include if driver can change lane, overtake or turn left/right. "
+# )
 
 USER_PROMPT: json = {
     "role": "user",
