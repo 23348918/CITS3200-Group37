@@ -119,7 +119,7 @@ ARG_INFO = [
     },  
     {
         "flags": ["-c", "--custom"],
-        "metavar": "TXT-PATH",
+        "metavar": "TXT_PATH",
         "help": "Allows addition of custom prompts via a txt file path."
     }, 
 ]
