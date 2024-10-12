@@ -33,7 +33,7 @@ This document provides a brief overview of how to use the program for various us
 - Python Version 3.8 and above
 
 ### Steps
-1. Clone the repository:
+1. Clone the Github repository:
     ```
     git clonehttps://github.com/23348918/CITS3200-Group37
     ```
@@ -64,60 +64,93 @@ cd Scripts/api
 python3 main.py
 ```
 
+To start the assisting interference program program, locate the python script `main.py` under `Scripts/image_manipulation/main.py` or from the root of the repository, run the following:
+```
+cd Scripts/image_manipulation
+python3 main.py
+```
 
-### Use Cases
- 1. LLM Model Processing
 
-    **Command:**
+## Use Cases
 
-    ```bash
-    python3 main.py model -process [path] -prompt [prompt] --verbose
-    ```
-
-    - model: Specifies the model type (i.e. ChatGPT).
-    - -process path: Indicates that you want to process the model at the given path.
-    - -prompt prompt: custom prompt for the given model, else a default case is used
-    - --verbose: Enables verbose output for more detailed logs.
-
-### Use Case 2: List Batches
+### 1: Processing an image, video or folder with LLM model
 
 **Command:**
 
 ```bash
-python3 main.py -list --verbose
+python3 main.py [model] --process [path]
+```
+**Description:**
+- Give the program a model (chatgpt, claude, gemini) and path for quick and easy processing.
+- Versatile for single images and videos or folders, works for all models
+
+**Examples:**
+#### Basic
+```bash
+python3 main.py chatgpt --process path/to/file
 ```
 
-Description:
+#### Short-hand verbose
+```bash
+python3 main.py gemini -p path/to/file -v
+```
 
-- -list: Requests a list of available batches.
-- --verbose: Enables verbose output for detailed batch information.
+#### Custom prompt
+```bash
+python3 main.py gemini -p path/to/file -c path/to/custom.txt
+```
 
-
-### Use Case 3: Check Batch
+### 2: Batch processing with ChatGPT
 
 **Command:**
 
 ```bash
-python3 main.py model -check batch_id --verbose
+python3 main.py chatgpt --batch [path]
 ```
 
-Description:
+**Description:**
 
-- model: Specifies the model type (i.e. ChatGPT).
-- -check batch_id: Checks the status or details of the batch with the given batch_id.
-- --verbose: Provides detailed output about the batch check.
+- To be used for cheaper processing on large folders and supports up to 100MB in size. 
+- Supports the automatic option
+- **`NOTE:`** This is only available for the ChatGPT model
 
-### Use Case 4: Export Batch
+**Examples:**
 
-**Command:**
-
+#### Basic automatic processing
 ```bash
-python3 main.py model -export batch_id --verbose
+python3 main.py chatgpt --batch path/to/folder --auto
 ```
 
-- model: Specifies the model type (i.e. ChatGPT).
-- -export batch_id: Exports the batch with the given batch_id.
-- --verbose: Provides detailed output about the export process.
+#### Short-hand
+```bash
+python3 main.py chatgpt -b path/to/folder -a
+```
+
+#### Checking a batch progress (only for non-auto processing)
+```bash
+python3 main.py chatgpt -ch batch_no
+```
+
+#### Export a batch file (only for non-auto processing)
+```bash
+python3 main.py chatgpt -e batch_no
+```
+
+#### List all batch processes
+```bash
+python3 main.py chatgpt -l
+```
+
+### 3: Interference Program
+```bash
+python3 main.py -s [strength] [path] [filter]
+```
+
+**Description:**
+
+- For use to alter images for the purpose of red teaming
+- Example filters include rain, fog, graffiti, brightness and more
+
 
 # Testing
 
