@@ -59,7 +59,6 @@ def main():
 
     authenticate(args.llm_model)
 
-    # TODO: Integrate with new format
     set_custom(args.custom)
 
     # Execute corresponding action from the ACTIONS dictionary
