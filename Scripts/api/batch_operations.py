@@ -94,49 +94,43 @@ def export_batch(batch_id: str) -> None:
     Args:
         batch_id: The ID of the batch to export.
     """
-    print(f"Exporting batch {batch_id}...")
+    verbose_print(f"Exporting batch {batch_id}...")
     try:
         batch_results: OpenAI = common.chatgpt_client.batches.retrieve(batch_id)
-    except openai.AuthenticationError as e: #authention error
-        raise ValueError(f"Export Batch Failed: {e.response} {e.code}\n{e.body}") from e
-    except openai.BadRequestError as e: # bad request error - no batchID exists
-        raise NameError(f"Export Batch Failed: {e.param} {e.code}\n{e.body}") from None
-    except Exception as e: # for all other error issues
-        raise Exception(f"Error exporting batche: {e}") from None
-    
-    if batch_results.error_file_id: # exporting a batch result that failed
-        print(f"Batch ID:{batch_id} Batch status: {batch_results.status} - failed. Cannot export results. \nTerminating....")
-        delete_exported_files(common.chatgpt_client, batch_results)
+    except Exception as e:
+        print(f"Error retrieving batch results: {e}")
         sys.exit(1)
-        
-    if batch_results.status != "completed":
-        print(f"Batch ID:{batch_id} Batch status: {batch_results.status} - not completed, please try again later. \nCannot export results. Terminating....")
-        sys.exit(1)
-        
-
-    
-    output_file_id: str = batch_results.output_file_id
+    if batch_results.error_file_id:
+        print(f"Batch processing was unsuccessful for {batch_id}.")
+        output_file_id: str = batch_results.error_file_id
+    else:
+        output_file_id: str = batch_results.output_file_id
     try:
         common.chatgpt_client.files.retrieve(output_file_id)
-    except Exception as e:
-        verbose_print(e)
-        print(f"Error exporting. This batch has been deleted after the previous export request. Please start a new batch.") 
+    except Exception:
+        print("You can only export the file once. Please rerun the process to re-export the results again.")
         sys.exit(1)
 
     response_bytes: bytes = common.chatgpt_client.files.content(output_file_id).read()
-
     response_dicts: list[dict[str, str]] = bytes_to_dicts(response_bytes)
-
+    # TODO: remove later
+    try:
+        with open("../../Output/sampleTEst.json", 'w') as json_file:
+            json.dump(response_dicts, json_file, indent=4)  # Use indent for pretty formatting
+        print(f"Data saved to sampleTEst.json successfully.")
+    except Exception as e:
+        print(f"Error saving data to sampleTEst.json: {e}")
+    
     extportResult = generate_csv_output(response_dicts)
-
+    
     
     
     if extportResult:
         delete_exported_files(common.chatgpt_client, batch_results)
-        verbose_print(f"Cleaning up batch relevant files.")
+        verbose_print("Cleaning up batch relevant files.")
     else:
         print(f"Cancelled. BatchID: {batch_id}" )
-        print(f"To export results using the export command, see python3 main.py -h for more info.")    
+        print("To export results using the export command, see python3 main.py -h for more info.")    
     
 
 def bytes_to_dicts(response_bytes: bytes) -> list[dict[str, str]]:
@@ -148,37 +142,58 @@ def bytes_to_dicts(response_bytes: bytes) -> list[dict[str, str]]:
     Returns:
         A list of dictionaries containing the response data.
     """
-    
-    
-    # using pandas
     response_str: str = response_bytes.decode("utf-8")
     response_lines: list[str] = response_str.splitlines()
-    data = []
-
+    response_dicts: list = []
+    print("DynamicAnalysisResponse.model_fields:", common.AnalysisResponse.model_fields)
     for line in response_lines:
-        # print(line)
-        # sys.exit(1)
-        try:
-            json_obj: dict = json.loads(line)
-            file_name = json_obj['custom_id']
-            model = json_obj['response']['body']['model']
-            content = json_obj['response']['body']['choices'][0]['message']['content'].replace("*", "")
-            pattern = re.compile(r'(\w+):\s*(.*?)(?=\n\w+:|$)', re.DOTALL | re.IGNORECASE)
-            matches = pattern.findall(content)
+        json_obj: dict = json.loads(line)
+        file_name: str = json_obj['custom_id']
+        model: str = json_obj['response']['body']['model']
+        content: str = json_obj['response']['body']['choices'][0]['message']['content'].replace("*", "")
+        pattern: re.Pattern = re.compile(r'(\w+):\s*(.*?)(?=\n\w+:|$)', re.DOTALL | re.IGNORECASE)
+        matches: list[tuple[str, str]] = pattern.findall(content)
+        response_dict: dict[str, str] = {match[0].lower(): match[1].strip() for match in matches}
+        response_dict['file_name'] = file_name
+        response_dict['model'] = model
+        # check the resposne dict if it has the required keys and values. if keys are missing or values are empty, add the missing key with NA value
+        for key, value in common.AnalysisResponse.model_fields.items():
+            if key not in response_dict:
+                response_dict[key] = "NA"
+        response_dicts.append(response_dict)
+    return response_dicts
 
-            # Create a dictionary for the current entry
-            entry = {match[0].lower(): match[1].strip() for match in matches}
-            entry['file_name'] = file_name
-            entry['model'] = model
-            data.append(entry)
-        except (json.JSONDecodeError, KeyError) as e:
-            verbose_print(f"Error parsing line: {line} - {e}")
+    # # This solution  works but it removes the whole entry if any of the required fields are missing
+    # response_str: str = response_bytes.decode("utf-8")
+    # response_lines: list[str] = response_str.splitlines()
+    # response_dicts: list = []
+    # print("DynamicAnalysisResponse.model_fields:", common.AnalysisResponse.model_fields)
+    # for line in response_lines:
+    #     json_obj: dict = json.loads(line)
+    #     file_name: str = json_obj['id']
+    #     model: str = json_obj['response']['body']['model']
+    #     content: str = json_obj['response']['body']['choices'][0]['message']['content'].replace("*", "")
+    #     pattern: re.Pattern = re.compile(r'(\w+):\s*(.*?)(?=\n\w+:|$)', re.DOTALL | re.IGNORECASE)
+    #     matches: list[tuple[str, str]] = pattern.findall(content)
+    #     response_dict: dict[str, str] = {match[0].lower(): match[1].strip() for match in matches}
+    #     response_dict['file_name'] = file_name
+    #     response_dict['model'] = model
+    #     #check the resposne dict if it has the required fields and values are not empty
+    #     isComplete = True
+    #     for key, value in common.AnalysisResponse.model_fields.items():
+    #         if key not in response_dict:
+    #             isComplete = False
+    #             break
+    #         if not response_dict[key]: 
+    #             isComplete = False
+    #             break
+    #     if isComplete:
+    #         response_dicts.append(response_dict)
+        
+        
+    # return response_dicts
 
-    # Convert to DataFrame for better handling (optional)
-    df = pd.DataFrame(data)
-    
-    # If you need the result back in dict format:
-    return df.to_dict(orient='records')
+
     
 
 def list_batches() -> None:
