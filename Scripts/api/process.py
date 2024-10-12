@@ -88,8 +88,9 @@ def generate_csv_output(data: dict[str, Any], output_directory: Optional[Path] =
         else:
             print("CSV file was not created.")
             return False
-    except Exception as e:
-        print(f"An error occurred: {e}")    
+    except OSError as e:
+        print(f"An error occurred: {e}")   
+        raise e 
         return False
         
 

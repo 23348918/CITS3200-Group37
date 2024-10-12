@@ -94,7 +94,7 @@ def export_batch(batch_id: str) -> None:
     Args:
         batch_id: The ID of the batch to export.
     """
-    verbose_print(f"Exporting batch {batch_id}...")
+    print(f"Exporting batch {batch_id}...")
     try:
         batch_results: OpenAI = common.chatgpt_client.batches.retrieve(batch_id)
     except openai.AuthenticationError as e: #authention error
@@ -115,8 +115,9 @@ def export_batch(batch_id: str) -> None:
     try:
         common.chatgpt_client.files.retrieve(output_file_id)
     except Exception as e:
-        raise Exception(e) from None
-
+        verbose_print(e)
+        print(f"Error exporting. This batch has been deleted after the previous export request. Please start a new batch.") 
+        sys.exit(1)
 
     response_bytes: bytes = common.chatgpt_client.files.content(output_file_id).read()
     response_dicts: list[dict[str, str]] = bytes_to_dicts(response_bytes)
@@ -146,7 +147,7 @@ def bytes_to_dicts(response_bytes: bytes) -> list[dict[str, str]]:
     response_lines: list[str] = response_str.splitlines()
     response_dicts: list = []
     DynamicAnalysisResponse = create_dynamic_response_model(common.custom_str)
-    print("DynamicAnalysisResponse.model_fields:", DynamicAnalysisResponse.model_fields)
+    verbose_print("DynamicAnalysisResponse.model_fields:", DynamicAnalysisResponse.model_fields)
     for line in response_lines:
         json_obj: dict = json.loads(line)
         file_name: str = json_obj['id']
@@ -320,33 +321,35 @@ def delete_exported_files(client: OpenAI, batch_results) -> None:
         None
     """
 
+    try:
+        if batch_results.input_file_id:
+            try:
+                client.files.delete(batch_results.input_file_id)
+                verbose_print(f"Cleaning input file")
+            except Exception as e:
+                verbose_print(f"File already deleted")
+                
 
-    if batch_results.input_file_id:
-        # client.files.delete(batch_results.input_file_id)
-        try:
-            common.chatgpt_client.files.delete(batch_results.input_file_id)
-            verbose_print(f"Cleaning input file")
-        except Exception as e:
-            pass
+        if batch_results.output_file_id:
+            # client.files.delete(batch_results.output_file_id)
+            try:
+                client.files.delete(batch_results.output_file_id)
+                verbose_print(f"Cleaing output file")
 
-    if batch_results.output_file_id:
-        # client.files.delete(batch_results.output_file_id)
-        try:
-            common.chatgpt_client.files.delete(batch_results.output_file_id)
-            verbose_print(f"Cleaing output file")
+            except Exception as e:
+                verbose_print(f"File already deleted")
 
-        except Exception as e:
-            pass
 
-    if batch_results.error_file_id:
-        # client.files.delete(batch_results.error_file_id)
-        try:
-            common.chatgpt_client.files.delete(batch_results.error_file_id)
-            verbose_print(f"Cleaing error file")
+        if batch_results.error_file_id:
+            # client.files.delete(batch_results.error_file_id)
+            try:
+                client.files.delete(batch_results.error_file_id)
+                verbose_print(f"Cleaing error file")
 
-        except Exception as e:
-            pass
-            
-            
-    
-    
+            except Exception as e:
+                verbose_print(f"File already deleted")
+                
+    except Exception as e:
+        verbose_print(f"Error deleting files. Bad batch input: {e}") 
+        
+                
