@@ -16,6 +16,7 @@ from pathlib import Path
 import pytest
 from batch_operations import generate_batch_file, process_batch, check_batch, export_batch, list_batches, upload_batch_file, get_file_dict, delete_exported_files
 from utils import get_file_dict
+import tempfile
 import openai
 
 
@@ -147,7 +148,9 @@ class TestBatchProcessChatGPT(unittest.TestCase):
     # Case 12: Test batch process with auto enabled
     @patch('batch_operations.check_batch', return_value=("completed", "Processing success")) 
     @patch('batch_operations.export_batch')  
-    @patch('batch_operations.upload_batch_file', return_value = "Batch ID")  
+    @patch('batch_operations.upload_batch_file', return_value = "Batch ID")
+    @patch('common.WAITING_TIMER', 3)  # Set the waiting timer to 0 for faster testing
+  
     def test_process_batch_auto_success(self, mock_upload_batch_file, mock_export_batch, mock_check_batch):
         file_path_str = "/home/dave/UWA/CITS3200-Group37/Tests/TestFiles/ImagesDir"
         process_batch(file_path_str, auto=True)
@@ -161,7 +164,9 @@ class TestBatchProcessChatGPT(unittest.TestCase):
         ("failed", "Processing failed"), 
         ("expired", "Processing expired"),
         ("cancelled", "Processing cancelled")
-        ])  
+        ])
+    @patch('common.WAITING_TIMER', 3)  # Set the waiting timer to 0 for faster testing
+  
     @patch('batch_operations.upload_batch_file', return_value="Batch ID") 
     def test_process_batch_auto_failure(self, mock_upload_batch_file, mock_check_batch):
         file_path_str = "/home/dave/UWA/CITS3200-Group37/Tests/TestFiles/ImagesDir"

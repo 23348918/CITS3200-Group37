@@ -10,7 +10,7 @@ import sys
 import openai
 from openai import OpenAI
 import re
-
+import pandas as pd
 
 
 
@@ -109,6 +109,10 @@ def export_batch(batch_id: str) -> None:
         delete_exported_files(common.chatgpt_client, batch_results)
         sys.exit(1)
         
+    if batch_results.status != "completed":
+        print(f"Batch ID:{batch_id} Batch status: {batch_results.status} - not completed, please try again later. \nCannot export results. Terminating....")
+        sys.exit(1)
+        
 
     
     output_file_id: str = batch_results.output_file_id
@@ -120,10 +124,11 @@ def export_batch(batch_id: str) -> None:
         sys.exit(1)
 
     response_bytes: bytes = common.chatgpt_client.files.content(output_file_id).read()
+
     response_dicts: list[dict[str, str]] = bytes_to_dicts(response_bytes)
-    
+
     extportResult = generate_csv_output(response_dicts)
-    
+
     
     
     if extportResult:
@@ -143,23 +148,37 @@ def bytes_to_dicts(response_bytes: bytes) -> list[dict[str, str]]:
     Returns:
         A list of dictionaries containing the response data.
     """
+    
+    
+    # using pandas
     response_str: str = response_bytes.decode("utf-8")
     response_lines: list[str] = response_str.splitlines()
-    response_dicts: list = []
-    DynamicAnalysisResponse = create_dynamic_response_model(common.custom_str)
-    verbose_print("DynamicAnalysisResponse.model_fields:", DynamicAnalysisResponse.model_fields)
+    data = []
+
     for line in response_lines:
-        json_obj: dict = json.loads(line)
-        file_name: str = json_obj['id']
-        model: str = json_obj['response']['body']['model']
-        content: str = json_obj['response']['body']['choices'][0]['message']['content'].replace("*", "")
-        pattern: re.Pattern = re.compile(r'(\w+):\s*(.*?)(?=\n\w+:|$)', re.DOTALL | re.IGNORECASE)
-        matches: list[tuple[str, str]] = pattern.findall(content)
-        response_dict: dict[str, str] = {match[0].lower(): match[1].strip() for match in matches}
-        response_dict['file_name'] = file_name
-        response_dict['model'] = model
-        response_dicts.append(response_dict)
-    return response_dicts
+        # print(line)
+        # sys.exit(1)
+        try:
+            json_obj: dict = json.loads(line)
+            file_name = json_obj['custom_id']
+            model = json_obj['response']['body']['model']
+            content = json_obj['response']['body']['choices'][0]['message']['content'].replace("*", "")
+            pattern = re.compile(r'(\w+):\s*(.*?)(?=\n\w+:|$)', re.DOTALL | re.IGNORECASE)
+            matches = pattern.findall(content)
+
+            # Create a dictionary for the current entry
+            entry = {match[0].lower(): match[1].strip() for match in matches}
+            entry['file_name'] = file_name
+            entry['model'] = model
+            data.append(entry)
+        except (json.JSONDecodeError, KeyError) as e:
+            verbose_print(f"Error parsing line: {line} - {e}")
+
+    # Convert to DataFrame for better handling (optional)
+    df = pd.DataFrame(data)
+    
+    # If you need the result back in dict format:
+    return df.to_dict(orient='records')
     
 
 def list_batches() -> None:

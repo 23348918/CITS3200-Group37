@@ -54,9 +54,12 @@ def generate_csv_output(data: dict[str, Any], output_directory: Optional[Path] =
         data: The data to convert to a CSV file.
         output_directory: The directory to save the CSV file in. If None, prompts user for location
     """
+    
+
     rows: list[dict[str, Any]] = []
 
     for single_data in data:
+        # print(single_data.keys())
         row = {
                 'File_name': single_data['file_name'],
                 'Model': single_data['model'],
