@@ -2,7 +2,7 @@ import json
 from openai import OpenAI
 from typing import Tuple
 from anthropic import Anthropic
-from pydantic import BaseModel
+from pydantic import BaseModel, create_model
 from pathlib import Path
 
 # Global Variables
@@ -10,22 +10,22 @@ chatgpt_client: OpenAI = None
 claude_client: Anthropic = None
 verbose: bool = False
 custom_str: str = None
-prompt: str = None
 
 # Response Format
-class AnalysisResponse(BaseModel):
-    hazards: str
-    vehicles: str
-    signs: str
-    road: str
-    weather: str
-    risk_rating: str
-    action: str
-    reason: str
 # class AnalysisResponse(BaseModel):
-#     description: str
-#     reasoning: str
+#     hazards: str
+#     vehicles: str
+#     signs: str
+#     road: str
+#     weather: str
+#     risk_rating: str
 #     action: str
+#     reason: str
+class AnalysisResponse(BaseModel):
+    description: str
+    reasoning: str
+    action: str
+    # speed: str
 
 # Constants
 WAITING_TIMER: int = 15  # Waiting timer in seconds
@@ -49,27 +49,27 @@ MAX_THREAD_WORKERS: int = 10
 MAX_OUTPUT_TOKENS_CLAUDE: int = 4096
 MAX_OUTPUT_TOKENS_GEMINI: int = 400
 
-PROMPT : str = (
-"""You are a road safety visual assistant installed in a car. Your task is to analyze images of road scenes and provide recommendations for safe driving. The user will provide you with an image or images to analyze. Each section should be short (a few words). IMPORTANT! DO NOT RAMBLE OR PRODUCE LONG RESPONSES. DO NOT REPEAT YOURSELF. LIST AT MOST 3 THINGS. Produce the output as a json with this format:
+# prompt : str = (
+# """You are a road safety visual assistant installed in a car. Your task is to analyze images of road scenes and provide recommendations for safe driving. The user will provide you with an image or images to analyze. Each section should be short (a few words). IMPORTANT! DO NOT RAMBLE OR PRODUCE LONG RESPONSES. DO NOT REPEAT YOURSELF. LIST AT MOST 3 THINGS. Produce the output as a json with this format:
 
-hazards: List any potential hazards such as people, animals, obstacles. Use one or two words for each and use None is there aren't any.
-vehicles: List the types of vehicles in the scene (e.g., cars, buses, motorcycles).
-signs: Include any road signs, traffic lights, or road markings (e.g., stop sign, speed limit, traffic light).
-road: Describe the road type (e.g., intersection, freeway, country road).
-weather: Describe the weather condition (e.g., clear, rainy, foggy). Only give one response.
-risk_rating: Provide a risk rating for the situation on a scale of 1-10 where 1 is perfectly safe and 10 is life threatening.
-action: Recommend the action the driver should take. Avoid statements that are too general such as "stay alert" or "remain catious" or "slow down". (eg: maintain speed, let pedestrians cross, prepare to turn left)
-reason: Briefly explain the reason for the recommended action."""
-)
-# PROMPT : str = (
-#     "You are a road safety visual assistant installed in a car. Your task is to analyze images of road scenes and provide recommendations for safe driving. Keep your response concise."
-#     "The user will provide you with an image or series of images to analyze."
-#     "For each image or sub-image, use the template format to explain the following in least words, always giving a result in quotations. "
-#     "description: Describe what the car is currently doing. Then, describe the objects in the scene in few words, if any, focus on safety hazards, "
-#     "road signs, traffic lights, road lines/marks, pedestrians, obstacles."
-#     "reasoning: Explain in only one sentence the reason for recommended action. Only talk about what is specifically about the scene. Avoid generic driving safety advice."
-#     "action: In few words, give suggestion as to what action should be taken by the driver. Also include if driver can change lane, overtake or turn left/right. "
+# hazards: List any potential hazards such as people, animals, obstacles. Use one or two words for each and use None is there aren't any.
+# vehicles: List the types of vehicles in the scene (e.g., cars, buses, motorcycles).
+# signs: Include any road signs, traffic lights, or road markings (e.g., stop sign, speed limit, traffic light).
+# road: Describe the road type (e.g., intersection, freeway, country road).
+# weather: Describe the weather condition (e.g., clear, rainy, foggy). Only give one response.
+# risk_rating: Provide a risk rating for the situation on a scale of 1-10 where 1 is perfectly safe and 10 is life threatening.
+# action: Recommend the action the driver should take. Avoid statements that are too general such as "stay alert" or "remain catious" or "slow down". (eg: maintain speed, let pedestrians cross, prepare to turn left)
+# reason: Briefly explain the reason for the recommended action."""
 # )
+prompt : str = (
+    "You are a road safety visual assistant installed in a car. Your task is to analyze images of road scenes and provide recommendations for safe driving. Keep your response concise."
+    "The user will provide you with an image or series of images to analyze."
+    "For each image or sub-image, use the template format to explain the following in least words, always giving a result in quotations. "
+    "description: Describe what the car is currently doing. Then, describe the objects in the scene in few words, if any, focus on safety hazards, "
+    "road signs, traffic lights, road lines/marks, pedestrians, obstacles."
+    "reasoning: Explain in only one sentence the reason for recommended action. Only talk about what is specifically about the scene. Avoid generic driving safety advice."
+    "action: In few words, give suggestion as to what action should be taken by the driver. Also include if driver can change lane, overtake or turn left/right. "
+)
 
 USER_PROMPT: json = {
     "role": "user",
@@ -150,9 +150,9 @@ def append_prompt(custom_str: str = None) -> None:
     global prompt
     if custom_str is not None:
         custom_str = custom_str.replace('\n', ' ')
-        prompt = PROMPT + custom_str
+        prompt = prompt + '\n' + custom_str
     else:
-        prompt = PROMPT
+        prompt = prompt
 
 def set_verbose(value: bool = True) -> None:
     global verbose
@@ -183,23 +183,28 @@ def set_custom(txt_file: str) -> None:
     customise_analysis_response(custom_str)
 
 def customise_analysis_response(custom_str: str):
-    print("Customising AnalysisResponse model fields")
     """
-    Modify the fields of the provided BaseModel in place based on the custom string.
+    Dynamically modify the fields of the provided AnalysisResponse model
+    by recreating and reassigning it with new fields.
     
     Args:
-        custom_str : String containing each of the custom prompts.
+        custom_str : String containing custom field definitions.
     """
-    if custom_str is None:
-        return AnalysisResponse
+    if not custom_str:
+        return
 
+    # Collect dynamic fields from the input string
     dynamic_fields = {}
-    
     lines = custom_str.splitlines()
     for line in lines:
         if ": " in line:
             first_word = line.split(": ")[0].strip()
-            dynamic_fields[first_word.lower()] = (str, ...)
+            dynamic_fields[first_word.lower()] = (str, ...)  # Assuming all fields are strings
 
-    for field_name, field_type in dynamic_fields.items():
-        AnalysisResponse.model_fields[field_name] = field_type
+    # Dynamically recreate the AnalysisResponse model with the additional fields
+    global AnalysisResponse
+    AnalysisResponse = create_model(
+        'AnalysisResponse',  # Keep the same name
+        __base__=AnalysisResponse,  # Inherit the existing fields
+        **dynamic_fields  # Add dynamic fields
+    )

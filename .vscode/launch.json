@@ -8,7 +8,12 @@
       "program": "${file}",
       "console": "integratedTerminal",
       "args": [
-        "gemini -p /mnt/c/Users/cohen/OneDrive/uni/2024_2/CITS3200/CITS3200-Group37/Input/Video_Data/youtube-clip-downsized.mp4 -v"
+        "chatgpt",
+        "-p",
+        "/mnt/c/Users/cohen/OneDrive/uni/2024_2/CITS3200/CITS3200-Group37/Input/Folder_test/n006-2018-09-17-12-15-45-0400__CAM_FRONT__1537201092512482.jpg",
+        "-c",
+        "/mnt/c/Users/cohen/OneDrive/uni/2024_2/CITS3200/CITS3200-Group37/custom.txt",
+        "-v"
       ]
     }
   ]

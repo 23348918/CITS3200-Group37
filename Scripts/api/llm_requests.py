@@ -32,17 +32,19 @@ def chatgpt_request(file_path: Path) -> dict[str, str]:
                 "role": "system",
                 "content": common.prompt
             }, message]
-    
-    # print(common.AnalysisResponse.model_fields.keys())
+    print("Prompt: ", common.prompt)
+    print("AnalysisResponse model fields: ", common.AnalysisResponse.model_fields.keys())
     response: str = common.chatgpt_client.beta.chat.completions.parse(
         model="gpt-4o-mini",
         messages=messages,
         response_format=common.AnalysisResponse
     )
+    print(response)
     full_response: dict = response.dict()
     response_dict: dict = full_response['choices'][0]['message']['parsed']
     response_dict["model"] = "gpt-4o-mini"
     response_dict["file_name"] = file_path.name
+    print(response_dict)
     return response_dict
 
 

@@ -58,11 +58,11 @@ def generate_csv_output(data: dict[str, Any], output_directory: Optional[Path] =
 
     for single_data in data:
         row = {
-                'File_name': single_data['file_name'],
-                'Model': single_data['model'],
+                'File_name': single_data.get('file_name', ""),
+                'Model': single_data.get('model', ""),
         }
         for response_column in common.AnalysisResponse.model_fields.keys():
-            row[response_column] = single_data[response_column]
+            row[response_column] = single_data.get(response_column, "")
 
         for key, value in single_data.items():
             if key not in row:
