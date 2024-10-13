@@ -35,7 +35,7 @@ This document provides a brief overview of how to use the program for various us
 ### Steps
 1. Clone the Github repository:
     ```
-    git clonehttps://github.com/23348918/CITS3200-Group37
+    git clone https://github.com/23348918/CITS3200-Group37
     ```
 2. From root of directory, create virtual environment and activate it. For more information on Virtual Environment setup see [VenvSetup.md](VenvSetup.md)
     ```
@@ -51,7 +51,7 @@ This document provides a brief overview of how to use the program for various us
     mkdir -p Private/ClientKeys
     echo "Enter ChatGPT Key here" > Private/ClientKeys/chatgpt-api.txt
     echo "Enter Claude Key here" > Private/ClientKeys/claude-api.txt
-    echo "Enter Gemeni Key here" > Private/ClientKeys/gemini-api.txt
+    echo "Enter Gemini Key here" > Private/ClientKeys/gemini-api.txt
     ```
     **`NOTE:`** Please enter the keys for the respective LLM into the placeholder. 
 

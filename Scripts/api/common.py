@@ -1,4 +1,5 @@
 import json
+import os
 from openai import OpenAI
 from typing import Tuple, Optional
 from anthropic import Anthropic
@@ -11,6 +12,7 @@ claude_client: Anthropic = None
 verbose: bool = False
 custom_str: str = None
 prompt: str = None
+default_txt_path = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', '..', 'custom.txt'))
 
 # Response Format
 class AnalysisResponse(BaseModel):
@@ -120,6 +122,8 @@ ARG_INFO = [
     {
         "flags": ["-c", "--custom"],
         "metavar": "TXT_PATH",
+        "nargs": "?",
+        "const": default_txt_path,
         "help": "Allows addition of custom prompts via a txt file path."
     }, 
 ]
