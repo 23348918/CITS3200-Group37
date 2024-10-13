@@ -22,6 +22,9 @@ def process_batch(file_path_str: str, auto: bool) -> None:
         auto: Boolean flag indicating whether to automatically process and export results.
     """
     file_path: Path = Path(file_path_str)
+    if not file_path.exists():
+        raise FileNotFoundError(f"File or directory not found: {file_path}")
+    
     if file_path.is_dir() or file_path.suffix in common.VALID_EXTENSIONS:
         verbose_print(f"Sending {file_path} to chatgpt...")
         batch_id: str = batch_process_chatgpt(file_path)
@@ -97,12 +100,23 @@ def export_batch(batch_id: str) -> None:
     verbose_print(f"Exporting batch {batch_id}...")
     try:
         batch_results: OpenAI = common.chatgpt_client.batches.retrieve(batch_id)
+    except openai.AuthenticationError as e:
+        verbose_print(f"Export Batch Failed: {e}")
+        raise PermissionError(f"Export Batch Failed: {e.response} {e.code}\n{e.body}") from None
+    except openai.BadRequestError as e:
+        verbose_print(f"Export Batch Failed: {e}")
+        raise ValueError(f"Export Batch Failed: {e.response} {e.code}\n{e.body}") from None
     except Exception as e:
-        print(f"Error retrieving batch results: {e}")
-        sys.exit(1)
+        verbose_print(f"Export Batch Failed: {e}")
+        raise RuntimeError(f"Export Batch Failed: {e}") from None
+        
+        
+        
+        
     if batch_results.error_file_id:
         print(f"Batch processing was unsuccessful for {batch_id}.")
         output_file_id: str = batch_results.error_file_id
+        sys.exit(1)
     else:
         output_file_id: str = batch_results.output_file_id
     try:
@@ -219,6 +233,10 @@ def batch_process_chatgpt(dir_path: Path) -> str:
     Returns:
         The ID of the batch created."""
     file_dict: dict[str, Path] = get_file_dict(dir_path)
+    if not file_dict:
+        raise ValueError("No valid files found in the directory.")
+
+    
     file_name: str = dir_path.stem
     out_path: Path = Path("../../Batch_Files") / f"{file_name}.jsonl"
     out_path.parent.mkdir(parents=True, exist_ok=True)

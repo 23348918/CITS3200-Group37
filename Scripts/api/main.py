@@ -52,18 +52,19 @@ def parse_arguments() -> argparse.Namespace:
 def main():
     """Main function that redirects to relevent functions based on the arguments."""
     args: argparse.Namespace = parse_arguments()
-    if args.llm_model != "chatgpt" and args.process is None:
-        print("Only chatgpt model is supported for batch processing.")
+    if args.llm_model != "chatgpt" and any  ([args.batch, args.auto, args.check, args.export]): # only chatgpt model is supported for batch operations
+        print("Only chatgpt model is supported for batch processing commands (-b, -l, -e, -ch). see python3 main.py -h for more help.\nTerminating....")
         sys.exit(1)
-
+    
     if args.verbose:
         set_verbose()
         sys.tracebacklimit = 1 # Enable traceback for verbose mode
 
     authenticate(args.llm_model)
 
-    # TODO: Integrate with new format
+    # TODO: Integrate with new format. Are we using this???
     set_custom(args.custom)
+    
 
     # Execute corresponding action from the ACTIONS dictionary
     for arg in vars(args):

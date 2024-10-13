@@ -42,6 +42,8 @@ class TestInputPath(unittest.TestCase):
         with self.assertRaises(ValueError):
             get_file_dict(test_directory)
 
+
+
 class TestFilesToJsonl(unittest.TestCase):
     
     # Case 4: generate batch file success from given file dictionary and output path
@@ -333,7 +335,7 @@ class TestExportBatch(unittest.TestCase):
             response=MagicMock(),
             body={"error": "Batch not found"}
         )
-        with self.assertRaises(NameError):
+        with self.assertRaises(ValueError):
             export_batch("invalid_batch_id")
         mock_chatgpt_client.batches.retrieve.assert_called_once_with("invalid_batch_id")
         
@@ -345,7 +347,7 @@ class TestExportBatch(unittest.TestCase):
             response=MagicMock(),
             body={"error": "Authentication failed"}
         )
-        with self.assertRaises(ValueError):
+        with self.assertRaises(PermissionError):
             export_batch("batch_123")
         mock_chatgpt_client.batches.retrieve.assert_called_once_with("batch_123")
         

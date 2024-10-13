@@ -3,13 +3,12 @@ from tkinter import filedialog
 from pathlib import Path
 from pydantic import BaseModel, create_model
 from typing import List, Dict
-from common import AnalysisResponse
+from common import AnalysisResponse, verbose_print
 import common
 import cv2
 import base64
 import os
 import sys
-
 def create_dynamic_response_model(custom_str: str) -> BaseModel:
     """
     Creates a dynamic class for custom responses
@@ -123,7 +122,7 @@ def ask_save_location(default_filename: str):
 
 def get_file_dict(directory_path: Path) -> dict[str, Path]:
     """
-    Generate a dictionary of file paths and labels from a directory.
+    Generate a dictionary of file paths and labels from a directory recursively.
 
     Args:
         directory_path: The path to the directory containing files.
@@ -131,19 +130,28 @@ def get_file_dict(directory_path: Path) -> dict[str, Path]:
     Returns:
         A dictionary where keys are file names and values are full file paths.
     """
-    # NOTE : for validation and testing
+    # NOTE: for validation and testing
     if not directory_path.is_dir() and not directory_path.is_file():
         raise ValueError(f"The provided path {directory_path} is not a valid path")
-    file_dict: dict = {}
+    
+    file_dict: dict[str, Path] = {}
+
     if directory_path.is_file():
         file_dict[directory_path.name] = directory_path
         return file_dict
-    else :
-        for file_path in directory_path.glob('*'):
-            if file_path.is_file() and file_path.suffix in common.VALID_EXTENSIONS:
+
+    # Iterate through all items in the directory
+    for file_path in directory_path.glob('*'):
+        if file_path.is_file(): 
+            if file_path.suffix in common.VALID_EXTENSIONS:
                 file_dict[file_path.name] = file_path
-    if not file_dict:
-        raise ValueError(f"No valid files found in {directory_path}")
+            else:
+                verbose_print(f"Skipping {file_path.name} as it is not a valid file type.")
+        elif file_path.is_dir():
+            # Recursive call for subdirectories
+            subdir_files = get_file_dict(file_path)
+            file_dict.update(subdir_files)
+
     return file_dict
 
 def get_media_type(file_path: Path) -> str:

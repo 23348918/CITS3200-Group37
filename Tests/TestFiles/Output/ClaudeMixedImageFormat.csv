@@ -1,0 +1,4 @@
+File_name,Model,Description,Reasoning,Action
+Image1.jpeg,models/claude-3-opus-20240229,The car appears to be stopped on a city street with tall buildings. There are trees lining the road,The road is empty ahead,Proceed forward when safe
+image1.png,models/claude-3-opus-20240229,The car is driving on a city street lined with trees and tall buildings on both sides. There are people walking on the sidewalk and parked vehicles along the curb.,The 'NO' sign on the side of the road ahead indicates that the driver should not proceed in that direction.,Reduce speed and look for a place to turn around or take an alternate route
+NO_speed_sign.png,models/claude-3-opus-20240229,The car appears to be driving on an empty city street lined with trees and high-rise buildings. There are signs indicating no entry or no turns.,The 'NO' sign and empty road ahead suggest the driver should not proceed further in this direction.,Stop and turn around

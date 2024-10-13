@@ -29,6 +29,7 @@ def process_model(model_name: str, file_path_str: str) -> None:
         print("Invalid model name")
         sys.exit(1)
     file_path: Path = Path(file_path_str)
+    request_output: list[dict[str, Any]] = []
 
     if file_path.is_file() and file_path.suffix in common.VALID_EXTENSIONS:
         verbose_print(f"Sending {file_path} to {model_name}...")
@@ -41,10 +42,6 @@ def process_model(model_name: str, file_path_str: str) -> None:
     else:
         print(f"{file_path} is not a valid file or directory.")
         sys.exit(1)
-
-    # TODO: Remove print
-    print(request_output)
-
     generate_csv_output(request_output)
 
 def generate_csv_output(data: dict[str, Any], output_directory: Optional[Path] = None):
@@ -111,6 +108,9 @@ def parallel_process(dir_path: Path, request_function: Callable) -> list[dict[st
     
     # Create a dictionary of valid files to process
     file_dict: dict[str, Path] = get_file_dict(dir_path)
+    # chec if dict is empty, if so raise value error
+    if not file_dict:
+        raise ValueError("No valid files found in the directory.")
 
     with ThreadPoolExecutor(max_workers=common.MAX_THREAD_WORKERS) as executor:
         future_to_file = {executor.submit(request_function, file): label for label, file in file_dict.items()}
