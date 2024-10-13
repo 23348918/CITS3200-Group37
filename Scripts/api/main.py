@@ -7,7 +7,6 @@ from batch_operations import print_check_batch, export_batch, list_batches, proc
 import sys
 
 ACTIONS: dict[str, callable] = {
-    "prompt": lambda args: set_prompt(args.prompt),
     "process": lambda args: process_model(args.llm_model, args.process),
     "check": lambda args: print_check_batch(args.check),
     "export": lambda args: export_batch(args.export),
@@ -59,6 +58,7 @@ def main():
 
     authenticate(args.llm_model)
 
+    set_prompt(args.prompt)
     set_custom(args.custom)
 
     # Execute corresponding action from the ACTIONS dictionary

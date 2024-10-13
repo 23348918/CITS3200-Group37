@@ -110,7 +110,7 @@ ARG_INFO = [
         "help": "Enable verbose output."
     },
     {
-        "flags": ["--prompt"],
+        "flags": ["-pr", "--prompt"],
         "metavar": "PROMPT",
         "help": "Prompt selector for the processing mode. Optional for --process."
     },  
@@ -143,6 +143,8 @@ def set_verbose(value: bool = True) -> None:
     verbose_print(f"Verbose: {value}")
 
 def set_prompt(prompt: str) -> None:
+    if prompt is None:
+        return
     global PROMPT
     PROMPT = prompt
     verbose_print(f"Custom Prompt: {prompt}")
