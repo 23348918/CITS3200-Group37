@@ -9,7 +9,6 @@ sys.tracebacklimit = 0 # Disable traceback for non-verbose mode
 
 
 ACTIONS: dict[str, callable] = {
-    "prompt": lambda args: set_prompt(args.prompt),
     "process": lambda args: process_model(args.llm_model, args.process),
     "check": lambda args: print_check_batch(args.check),
     "export": lambda args: export_batch(args.export),
@@ -62,10 +61,10 @@ def main():
 
     authenticate(args.llm_model)
 
-    # TODO: Integrate with new format. Are we using this???
+
+    set_prompt(args.prompt)
     set_custom(args.custom)
     
-
     # Execute corresponding action from the ACTIONS dictionary
     for arg in vars(args):
         if (arg in ACTIONS and 

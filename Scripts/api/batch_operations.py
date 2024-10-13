@@ -161,7 +161,8 @@ def bytes_to_dicts(response_bytes: bytes) -> list[dict[str, str]]:
     response_str: str = response_bytes.decode("utf-8")
     response_lines: list[str] = response_str.splitlines()
     response_dicts: list = []
-    print("DynamicAnalysisResponse.model_fields:", common.AnalysisResponse.model_fields)
+    DynamicAnalysisResponse = create_dynamic_response_model(common.custom_str)
+    verbose_print("DynamicAnalysisResponse.model_fields:", common.AnalysisResponse.model_fields)
     for line in response_lines:
         json_obj: dict = json.loads(line)
         file_name: str = json_obj['custom_id']

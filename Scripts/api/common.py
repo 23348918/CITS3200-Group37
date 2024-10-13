@@ -1,4 +1,5 @@
 import json
+import os
 from openai import OpenAI
 from typing import Tuple, Optional
 from anthropic import Anthropic
@@ -11,6 +12,7 @@ claude_client: Anthropic = None
 verbose: bool = False
 custom_str: str = None
 prompt: str = None
+default_txt_path = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', '..', 'custom.txt'))
 
 # Response Format
 class AnalysisResponse(BaseModel):
@@ -35,7 +37,7 @@ VIDEO_EXTENSIONS: Tuple[str, ...] = (
 
 
 
-LLMS: list[str] = ["chatgpt", "gemini", "claude"]
+LLMS: list[str] = ["chatgpt", "gemini", "claude", "all"]
 MAX_THREAD_WORKERS: int = 10
 MAX_OUTPUT_TOKENS_CLAUDE: int = 4096
 MAX_OUTPUT_TOKENS_GEMINI: int = 400
@@ -66,7 +68,7 @@ ARG_INFO = [
         "name": "llm_model",
         "nargs": "?",
         "type": str,
-        "choices": ["chatgpt", "gemini", "claude"],
+        "choices": ["chatgpt", "gemini", "claude", "all"],
         "help": "Name of the LLM model to process image or video files. Required for process, check, and export."
     },
 
@@ -108,7 +110,7 @@ ARG_INFO = [
         "help": "Enable verbose output."
     },
     {
-        "flags": ["--prompt"],
+        "flags": ["-pr", "--prompt"],
         "metavar": "PROMPT",
         "help": "Prompt selector for the processing mode. Optional for --process."
     },  
@@ -119,7 +121,9 @@ ARG_INFO = [
     },  
     {
         "flags": ["-c", "--custom"],
-        "metavar": "TXT-PATH",
+        "metavar": "TXT_PATH",
+        "nargs": "?",
+        "const": default_txt_path,
         "help": "Allows addition of custom prompts via a txt file path."
     }, 
 ]
@@ -139,6 +143,8 @@ def set_verbose(value: bool = True) -> None:
     verbose_print(f"Verbose: {value}")
 
 def set_prompt(prompt: str) -> None:
+    if prompt is None:
+        return
     global PROMPT
     PROMPT = prompt
     verbose_print(f"Custom Prompt: {prompt}")

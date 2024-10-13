@@ -12,6 +12,10 @@ def authenticate(model_name: str) -> object:
     Args:
         auth_path: Path to the file containing the API key.
     """
+    if model_name == "all":
+        for i in ["chatgpt", "gemini", "claude"]:
+            authenticate(i)
+        return
     script_dir = Path(__file__).parent
     file_path = script_dir / ".." / ".." / "Private" / "ClientKeys" / f"{model_name}-api.txt"
     if not file_path.exists():

@@ -1,4 +1,5 @@
 from pathlib import Path
+from copy import deepcopy
 import common
 from common import verbose_print
 from utils import get_media_type, encode_image, encode_video, create_dynamic_response_model
@@ -21,7 +22,7 @@ def chatgpt_request(file_path: Path) -> dict[str, str]:
     else:
         encoded_file: list[str] = [encode_image(file_path)]
     DynamicAnalysisResponse = create_dynamic_response_model(common.custom_str)
-    message: str = common.USER_PROMPT
+    message: str = deepcopy(common.USER_PROMPT)
     for image in encoded_file:
         message["content"].append({
             "type": "image_url",
@@ -92,7 +93,7 @@ def claude_request(file_path: Path) -> dict[str, str]:
     else:
         media_type: str = get_media_type(file_path)
         encoded_file: str = [encode_image(file_path)]
-    message: str = common.USER_PROMPT
+    message: str = deepcopy(common.USER_PROMPT)
     for image in encoded_file:
         message["content"].append({
             "type": "image",
