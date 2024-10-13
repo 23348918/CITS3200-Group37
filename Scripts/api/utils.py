@@ -198,16 +198,28 @@ def encode_video(video_path: Path, frame_rate_divisor: int = 2) -> list[str]:
         The base64-encoded list of image strings."""
     images: list[str] = []
     cam = cv2.VideoCapture(str(video_path))
-    frame_rate: int = int(cam.get(cv2.CAP_PROP_FPS) / frame_rate_divisor)
     
+    # Get the video's original frame rate
+    fps = cam.get(cv2.CAP_PROP_FPS)
+    
+    # Calculate how many frames to skip for capturing frames every second
+    frame_skip = int(fps)  # Capture every frame at 1 second intervals
+    
+    count = 0
     while True:
         success, frame = cam.read()
         if not success:
             break
-        if len(images) % frame_rate == 0:
+        if count % frame_skip == 0:  # Capture frame every second
             success, buffer = cv2.imencode('.jpg', frame)
             if success:
                 images.append(base64.b64encode(buffer).decode('utf-8'))
+        count += 1
 
     cam.release()
+    
+    # Write to file
+    with open("VideoOut.txt", "w") as video_file:
+        for item in images:
+            video_file.write(item + '\n')  # Ensure each base64 string is on a new line
     return images

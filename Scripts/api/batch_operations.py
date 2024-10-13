@@ -116,6 +116,7 @@ def export_batch(batch_id: str) -> None:
     if batch_results.error_file_id:
         print(f"Batch processing was unsuccessful for {batch_id}.")
         output_file_id: str = batch_results.error_file_id
+        
         sys.exit(1)
     else:
         output_file_id: str = batch_results.output_file_id
@@ -128,13 +129,14 @@ def export_batch(batch_id: str) -> None:
     response_bytes: bytes = common.chatgpt_client.files.content(output_file_id).read()
     response_dicts: list[dict[str, str]] = bytes_to_dicts(response_bytes)
     # TODO: remove later
-    try:
-        with open("../../Output/sampleTEst.json", 'w') as json_file:
-            json.dump(response_dicts, json_file, indent=4)  # Use indent for pretty formatting
-        print(f"Data saved to sampleTEst.json successfully.")
-    except Exception as e:
-        print(f"Error saving data to sampleTEst.json: {e}")
+    # try:
+    #     with open("../../Output/sampleTEst.json", 'w') as json_file:
+    #         json.dump(response_bytes.decode("utf-8"), json_file, indent=4)  # Use indent for pretty formatting
+    #     print(f"Data saved to sampleTEst.json successfully.")
+    # except Exception as e:
+    #     print(f"Error saving data to sampleTEst.json: {e}")
     
+    # sys.exit(1)
     extportResult = generate_csv_output(response_dicts)
     
     
@@ -259,9 +261,15 @@ def generate_batch_file(file_dict: dict[str, Path], out_path: Path) -> None:
                 if file_path.suffix not in common.VALID_EXTENSIONS:
                     verbose_print(f"Skipping {file_path}. Unsupported file format.")
                     continue
-                json_entry = create_json_entry(label, file_path)
-                json.dump(json_entry, f)
-                f.write("\n")  # Ensure each JSON entry is on a new line
+                json_entry = create_json_entry(label, file_path) # returns a list or a dict
+                
+                if type(json_entry) == list:
+                    for entry in json_entry:
+                        json.dump(entry, f)
+                        f.write("\n")
+                else:
+                    json.dump(json_entry, f)
+                    f.write("\n")  # Ensure each JSON entry is on a new line
 
     except OSError as e:
         raise OSError(f"Failed to write the batch file: {e}")
@@ -278,39 +286,74 @@ def create_json_entry(label: str, file_path: Path) -> dict[str, str]:
     Returns:
         A dictionary representing the entry for the batch file.
     """
+
     encoded_media = None
+    isVideo = False
     if file_path.suffix in common.VIDEO_EXTENSIONS:
         encoded_media = encode_video(file_path)
+        isVideo = True
     else:
         encoded_media  = encode_image(file_path)
-    
-    json_entry: dict = {
-        "custom_id": label,
-        "method": "POST",
-        "url": "/v1/chat/completions",
-        "body": {
-            "model": "gpt-4o-mini",
-            "messages": [
-                {
-                    "role": "system",
-                    "content": common.prompt,
-                },
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": "Analyze the following image."},
+    if isVideo:
+        entries = []
+        for i in range(1,len(encoded_media)+1):
+            json_entry: dict = {
+                "custom_id": f"{label}_{i}",
+                "method": "POST",
+                "url": "/v1/chat/completions",
+                "body": {
+                    "model": "gpt-4o-mini",
+                    "messages": [
                         {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/jpeg;base64,{encoded_media}"
-                            },
+                            "role": "system",
+                            "content": common.prompt,
+                        },
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "text", "text": "Analyze the following image."},
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": f"data:image/jpeg;base64,{encoded_media[i-1]}"
+                                    },
+                                },
+                            ],
                         },
                     ],
                 },
-            ],
-        },
-    }
-    return json_entry
+            }
+            entries.append(json_entry)
+       
+        return entries
+    else:
+        json_entry: dict = {
+            "custom_id": label,
+            "method": "POST",
+            "url": "/v1/chat/completions",
+            "body": {
+                "model": "gpt-4o-mini",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": common.prompt,
+                    },
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": "Analyze the following image."},
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{encoded_media}"
+                                },
+                            },
+                        ],
+                    },
+                ],
+            },
+        }
+        return json_entry
 
 def upload_batch_file(batch_file_path: Path) -> str:
     """Uploads a batch file to the ChatGPT API.
