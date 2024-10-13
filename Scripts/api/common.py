@@ -37,7 +37,7 @@ VIDEO_EXTENSIONS: Tuple[str, ...] = (
 
 
 
-LLMS: list[str] = ["chatgpt", "gemini", "claude"]
+LLMS: list[str] = ["chatgpt", "gemini", "claude", "all"]
 MAX_THREAD_WORKERS: int = 10
 MAX_OUTPUT_TOKENS_CLAUDE: int = 4096
 MAX_OUTPUT_TOKENS_GEMINI: int = 400
@@ -68,7 +68,7 @@ ARG_INFO = [
         "name": "llm_model",
         "nargs": "?",
         "type": str,
-        "choices": ["chatgpt", "gemini", "claude"],
+        "choices": ["chatgpt", "gemini", "claude", "all"],
         "help": "Name of the LLM model to process image or video files. Required for process, check, and export."
     },
 
