@@ -23,7 +23,6 @@ def process_each_model(model_name: str, file_path: Path) -> list[dict[str, Any]]
     Args:
         model_name: The name of the model to process.
         file_path_str: The path to the file or directory to process.
-
     """
     if file_path.is_file() and file_path.suffix in common.VALID_EXTENSIONS:
         verbose_print(f"Sending {file_path} to {model_name}...")
@@ -36,7 +35,8 @@ def process_each_model(model_name: str, file_path: Path) -> list[dict[str, Any]]
     else:
         print(f"{file_path} is not a valid file or directory.")
         sys.exit(1)
-    
+
+        
     return request_output
 
 def process_model(model_name: str, file_path_str: str) -> None:
@@ -69,7 +69,10 @@ def generate_csv_output(model_name, data: dict[str, Any], output_directory: Opti
         data: The data to convert to a CSV file.
         output_directory: The directory to save the CSV file in. If None, prompts user for location
     """
+    
+
     rows: list[dict[str, Any]] = []
+
 
     if model_name == "all":
         images_length: int = int(len(data) / 3)
@@ -106,7 +109,7 @@ def generate_csv_output(model_name, data: dict[str, Any], output_directory: Opti
                 if key not in row:
                     row[key.capitalize()] = value
             rows.append(row)
-
+            
     df: pd.DataFrame = pd.DataFrame(rows)
     if output_directory is None:
         csv_file_path = ask_save_location("result.csv")
@@ -124,8 +127,9 @@ def generate_csv_output(model_name, data: dict[str, Any], output_directory: Opti
         else:
             print("CSV file was not created.")
             return False
-    except Exception as e:
-        print(f"An error occurred: {e}")    
+    except OSError as e:
+        print(f"An error occurred: {e}")   
+        raise e 
         return False
         
 
@@ -143,6 +147,9 @@ def parallel_process(dir_path: Path, request_function: Callable) -> list[dict[st
     
     # Create a dictionary of valid files to process
     file_dict: dict[str, Path] = get_file_dict(dir_path)
+    # chec if dict is empty, if so raise value error
+    if not file_dict:
+        raise ValueError("No valid files found in the directory.")
 
     with ThreadPoolExecutor(max_workers=common.MAX_THREAD_WORKERS) as executor:
         future_to_file = {executor.submit(request_function, file): label for label, file in file_dict.items()}

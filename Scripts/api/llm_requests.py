@@ -16,7 +16,7 @@ def chatgpt_request(file_path: Path) -> dict[str, str]:
     
     Returns:
         The analysis response as a dictionary."""
-    is_video: bool = file_path.suffix in common.VIDEO_EXTENSIONS
+    is_video: bool = file_path.suffix in common.VALID_EXTENSIONS
     if is_video:
         encoded_file: list[str] = encode_video(file_path)
     else:

@@ -10,10 +10,8 @@ import sys
 import openai
 from openai import OpenAI
 import re
+import pandas as pd
 
-
-
-sys.tracebacklimit = 0
 
 
 def process_batch(file_path_str: str, auto: bool) -> None:
@@ -24,6 +22,9 @@ def process_batch(file_path_str: str, auto: bool) -> None:
         auto: Boolean flag indicating whether to automatically process and export results.
     """
     file_path: Path = Path(file_path_str)
+    if not file_path.exists():
+        raise FileNotFoundError(f"File or directory not found: {file_path}")
+    
     if file_path.is_dir() or file_path.suffix in common.VALID_EXTENSIONS:
         verbose_print(f"Sending {file_path} to chatgpt...")
         batch_id: str = batch_process_chatgpt(file_path)
@@ -77,8 +78,8 @@ def check_batch(batch_id: str) -> tuple[str, str]:
         verbose_print(f"Checking status of batch {batch_id}\t {batch_status.status}")
 
     except Exception as e:
-        print(f"Batch ID {batch_id} not found: {e}")
-        sys.exit(1)
+        raise Exception(f"Check Batch failed: \n{e.body}") from None
+
     
     if batch_status.error_file_id:
         status_message: str = "Processing failed"
@@ -99,12 +100,24 @@ def export_batch(batch_id: str) -> None:
     verbose_print(f"Exporting batch {batch_id}...")
     try:
         batch_results: OpenAI = common.chatgpt_client.batches.retrieve(batch_id)
+    except openai.AuthenticationError as e:
+        verbose_print(f"Export Batch Failed: {e}")
+        raise PermissionError(f"Export Batch Failed: {e.response} {e.code}\n{e.body}") from None
+    except openai.BadRequestError as e:
+        verbose_print(f"Export Batch Failed: {e}")
+        raise ValueError(f"Export Batch Failed: {e.response} {e.code}\n{e.body}") from None
     except Exception as e:
-        print(f"Error retrieving batch results: {e}")
-        sys.exit(1)
+        verbose_print(f"Export Batch Failed: {e}")
+        raise RuntimeError(f"Export Batch Failed: {e}") from None
+        
+        
+        
+        
     if batch_results.error_file_id:
         print(f"Batch processing was unsuccessful for {batch_id}.")
         output_file_id: str = batch_results.error_file_id
+        
+        sys.exit(1)
     else:
         output_file_id: str = batch_results.output_file_id
     try:
@@ -115,17 +128,25 @@ def export_batch(batch_id: str) -> None:
 
     response_bytes: bytes = common.chatgpt_client.files.content(output_file_id).read()
     response_dicts: list[dict[str, str]] = bytes_to_dicts(response_bytes)
+    # TODO: remove later
+    # try:
+    #     with open("../../Output/sampleTEst.json", 'w') as json_file:
+    #         json.dump(response_bytes.decode("utf-8"), json_file, indent=4)  # Use indent for pretty formatting
+    #     print(f"Data saved to sampleTEst.json successfully.")
+    # except Exception as e:
+    #     print(f"Error saving data to sampleTEst.json: {e}")
     
+    # sys.exit(1)
     extportResult = generate_csv_output(response_dicts)
     
     
     
     if extportResult:
         delete_exported_files(common.chatgpt_client, batch_results)
-        verbose_print(f"Cleaning up batch relevant files.")
+        verbose_print("Cleaning up batch relevant files.")
     else:
         print(f"Cancelled. BatchID: {batch_id}" )
-        print(f"To export results using the export command, see python3 main.py -h for more info.")    
+        print("To export results using the export command, see python3 main.py -h for more info.")    
     
 
 def bytes_to_dicts(response_bytes: bytes) -> list[dict[str, str]]:
@@ -141,9 +162,10 @@ def bytes_to_dicts(response_bytes: bytes) -> list[dict[str, str]]:
     response_lines: list[str] = response_str.splitlines()
     response_dicts: list = []
     DynamicAnalysisResponse = create_dynamic_response_model(common.custom_str)
+    verbose_print("DynamicAnalysisResponse.model_fields:", common.AnalysisResponse.model_fields)
     for line in response_lines:
         json_obj: dict = json.loads(line)
-        file_name: str = json_obj['id']
+        file_name: str = json_obj['custom_id']
         model: str = json_obj['response']['body']['model']
         content: str = json_obj['response']['body']['choices'][0]['message']['content'].replace("*", "")
         pattern: re.Pattern = re.compile(r'(\w+):\s*(.*?)(?=\n\w+:|$)', re.DOTALL | re.IGNORECASE)
@@ -151,17 +173,59 @@ def bytes_to_dicts(response_bytes: bytes) -> list[dict[str, str]]:
         response_dict: dict[str, str] = {match[0].lower(): match[1].strip() for match in matches}
         response_dict['file_name'] = file_name
         response_dict['model'] = model
+        # check the resposne dict if it has the required keys and values. if keys are missing or values are empty, add the missing key with NA value
+        for key, value in common.AnalysisResponse.model_fields.items():
+            if key not in response_dict:
+                response_dict[key] = "NA"
         response_dicts.append(response_dict)
     return response_dicts
+
+    # # This solution  works but it removes the whole entry if any of the required fields are missing
+    # response_str: str = response_bytes.decode("utf-8")
+    # response_lines: list[str] = response_str.splitlines()
+    # response_dicts: list = []
+    # print("DynamicAnalysisResponse.model_fields:", common.AnalysisResponse.model_fields)
+    # for line in response_lines:
+    #     json_obj: dict = json.loads(line)
+    #     file_name: str = json_obj['id']
+    #     model: str = json_obj['response']['body']['model']
+    #     content: str = json_obj['response']['body']['choices'][0]['message']['content'].replace("*", "")
+    #     pattern: re.Pattern = re.compile(r'(\w+):\s*(.*?)(?=\n\w+:|$)', re.DOTALL | re.IGNORECASE)
+    #     matches: list[tuple[str, str]] = pattern.findall(content)
+    #     response_dict: dict[str, str] = {match[0].lower(): match[1].strip() for match in matches}
+    #     response_dict['file_name'] = file_name
+    #     response_dict['model'] = model
+    #     #check the resposne dict if it has the required fields and values are not empty
+    #     isComplete = True
+    #     for key, value in common.AnalysisResponse.model_fields.items():
+    #         if key not in response_dict:
+    #             isComplete = False
+    #             break
+    #         if not response_dict[key]: 
+    #             isComplete = False
+    #             break
+    #     if isComplete:
+    #         response_dicts.append(response_dict)
+        
+        
+    # return response_dicts
+
+
     
 
 def list_batches() -> None:
     """Lists the past 20 batches and their status'."""
-    verbose_print("Listing all batches.")
-    batch_list: list = common.chatgpt_client.batches.list(limit=20)
-    for item in batch_list:
-        result: str = "Batch process success." if not item.error_file_id else "Batch process failed"
-        print(f"Batch ID: {item.id}\tStatus: {item.status}\t result:{result}")
+    try:
+        verbose_print("Listing all batches.")
+        batch_list: list = common.chatgpt_client.batches.list(limit=20)
+        for item in batch_list:
+            result: str = "Batch process success." if not item.error_file_id else "Batch process failed"
+            print(f"Batch ID: {item.id}\tStatus: {item.status}\t result:{result}")
+    except openai.AuthenticationError as e:
+        # Raise the original AuthenticationError as a ValueError
+        raise ValueError(f"List Batch Failed: {e.response} {e.code}\n{e.body}") from e
+    except Exception as e: # for all other error issues
+        raise Exception(f"Error listing batches: {e}") from None
 
 def batch_process_chatgpt(dir_path: Path) -> str:
     """Processes a batch of files located at the given directory path.
@@ -172,6 +236,10 @@ def batch_process_chatgpt(dir_path: Path) -> str:
     Returns:
         The ID of the batch created."""
     file_dict: dict[str, Path] = get_file_dict(dir_path)
+    if not file_dict:
+        raise ValueError("No valid files found in the directory.")
+
+    
     file_name: str = dir_path.stem
     out_path: Path = Path("../../Batch_Files") / f"{file_name}.jsonl"
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -194,9 +262,15 @@ def generate_batch_file(file_dict: dict[str, Path], out_path: Path) -> None:
                 if file_path.suffix not in common.VALID_EXTENSIONS:
                     verbose_print(f"Skipping {file_path}. Unsupported file format.")
                     continue
-                json_entry = create_json_entry(label, file_path)
-                json.dump(json_entry, f)
-                f.write("\n")  # Ensure each JSON entry is on a new line
+                json_entry = create_json_entry(label, file_path) # returns a list or a dict
+                
+                if type(json_entry) == list:
+                    for entry in json_entry:
+                        json.dump(entry, f)
+                        f.write("\n")
+                else:
+                    json.dump(json_entry, f)
+                    f.write("\n")  # Ensure each JSON entry is on a new line
 
     except OSError as e:
         raise OSError(f"Failed to write the batch file: {e}")
@@ -213,39 +287,74 @@ def create_json_entry(label: str, file_path: Path) -> dict[str, str]:
     Returns:
         A dictionary representing the entry for the batch file.
     """
+
     encoded_media = None
+    isVideo = False
     if file_path.suffix in common.VIDEO_EXTENSIONS:
         encoded_media = encode_video(file_path)
+        isVideo = True
     else:
         encoded_media  = encode_image(file_path)
-    
-    json_entry: dict = {
-        "custom_id": label,
-        "method": "POST",
-        "url": "/v1/chat/completions",
-        "body": {
-            "model": "gpt-4o-mini",
-            "messages": [
-                {
-                    "role": "system",
-                    "content": common.prompt,
-                },
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": "Analyze the following image."},
+    if isVideo:
+        entries = []
+        for i in range(1,len(encoded_media)+1):
+            json_entry: dict = {
+                "custom_id": f"{label}_{i}",
+                "method": "POST",
+                "url": "/v1/chat/completions",
+                "body": {
+                    "model": "gpt-4o-mini",
+                    "messages": [
                         {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/jpeg;base64,{encoded_media}"
-                            },
+                            "role": "system",
+                            "content": common.prompt,
+                        },
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "text", "text": "Analyze the following image."},
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": f"data:image/jpeg;base64,{encoded_media[i-1]}"
+                                    },
+                                },
+                            ],
                         },
                     ],
                 },
-            ],
-        },
-    }
-    return json_entry
+            }
+            entries.append(json_entry)
+       
+        return entries
+    else:
+        json_entry: dict = {
+            "custom_id": label,
+            "method": "POST",
+            "url": "/v1/chat/completions",
+            "body": {
+                "model": "gpt-4o-mini",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": common.prompt,
+                    },
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": "Analyze the following image."},
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{encoded_media}"
+                                },
+                            },
+                        ],
+                    },
+                ],
+            },
+        }
+        return json_entry
 
 def upload_batch_file(batch_file_path: Path) -> str:
     """Uploads a batch file to the ChatGPT API.
@@ -286,6 +395,7 @@ def upload_batch_file(batch_file_path: Path) -> str:
     except openai.APIError as e:
         print(f"Error uploading batch file: {e}")
         raise
+    
 
     batch_id: str = common.chatgpt_client.batches.create(
         input_file_id=batch_input_file.id,
@@ -307,15 +417,35 @@ def delete_exported_files(client: OpenAI, batch_results) -> None:
         None
     """
 
+    try:
+        if batch_results.input_file_id:
+            try:
+                client.files.delete(batch_results.input_file_id)
+                verbose_print(f"Cleaning input file")
+            except Exception as e:
+                verbose_print(f"File already deleted")
+                
 
-    if batch_results.input_file_id:
-        client.files.delete(batch_results.input_file_id)
-        # print (batch_results.input_file_id)
+        if batch_results.output_file_id:
+            # client.files.delete(batch_results.output_file_id)
+            try:
+                client.files.delete(batch_results.output_file_id)
+                verbose_print(f"Cleaing output file")
 
-    if batch_results.output_file_id:
-        client.files.delete(batch_results.output_file_id)
-        # print (batch_results.output_file_id)
+            except Exception as e:
+                verbose_print(f"File already deleted")
 
-    if batch_results.error_file_id:
-        client.files.delete(batch_results.error_file_id)
-        # print (batch_results.error_file_id)
+
+        if batch_results.error_file_id:
+            # client.files.delete(batch_results.error_file_id)
+            try:
+                client.files.delete(batch_results.error_file_id)
+                verbose_print(f"Cleaing error file")
+
+            except Exception as e:
+                verbose_print(f"File already deleted")
+                
+    except Exception as e:
+        verbose_print(f"Error deleting files. Bad batch input: {e}") 
+        
+                

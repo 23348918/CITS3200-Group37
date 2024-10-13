@@ -5,27 +5,6 @@
 #     pytest Tests/test_batch_operations.py
 
 
-# NOTE: Delete later
-# generate batch file - generates a jsonl file for a batch of files to be processed
-# upload batch file - uploads the created json entry to the server. used in generate batch file and returns the batch id
-# batch process_chatgpt - calls generate batch file and upload batch file
-# process batch - calls batch_process_chatgpt and if auto is true, calls check_batch and export_batch
-# list batches - list all batches
-# check batch - check the status of a batch return the status and status message
-# export batch - retrieve the results of a batch and write to a csv file
-
-    # Case 1: Create JSON Entry success
-    # Case 2: Create JSON Entry failure
-    # Case 3: Upload JSON Entry success and return batch id
-    # Case 4: Upload JSON Entry failure 
-    # Case 5: Process Batch success
-    # Case 6: Process Batch failure
-    # Case 7: List Batches success
-    # Case 8: Check Batch success
-    # Case 9: Export Batch success
-    # Case 10: Export Batch failure
-    # Case 11: Process Batch with auto success
-    # Case 12: Process Batch with auto failure
 import sys
 import os
 
@@ -35,12 +14,11 @@ import unittest
 from unittest.mock import patch, MagicMock, mock_open
 from pathlib import Path
 import pytest
-from batch_operations import generate_batch_file, process_batch, check_batch, export_batch, list_batches, batch_process_chatgpt, upload_batch_file, get_file_dict
-from common import verbose_print
-from utils import get_file_dict, encode_image, encode_video, create_dynamic_response_model
-from process import generate_csv_output
+from batch_operations import generate_batch_file, process_batch, check_batch, export_batch, list_batches, upload_batch_file, get_file_dict, delete_exported_files
+from utils import get_file_dict
 import tempfile
 import openai
+
 
 class TestInputPath(unittest.TestCase):
     
@@ -64,6 +42,8 @@ class TestInputPath(unittest.TestCase):
         with self.assertRaises(ValueError):
             get_file_dict(test_directory)
 
+
+
 class TestFilesToJsonl(unittest.TestCase):
     
     # Case 4: generate batch file success from given file dictionary and output path
@@ -79,7 +59,7 @@ class TestFilesToJsonl(unittest.TestCase):
     #Case 5: generate batch file failure due to invalid/empty output path
     @patch('batch_operations.get_file_dict')  # Mock get_file_dict to return a valid file_dict
     def test_generate_batch_with_invalid_file_path(self, mock_get_file_dict):
-        # Simulate a valid file_dict
+
         mock_get_file_dict.return_value = {
             'example_image.png': Path('/valid/path/example_image.png')
         }
@@ -155,12 +135,12 @@ class TestUploadJsonBatch(unittest.TestCase):
                 upload_batch_file(batch_file_path)
         
         
-
+#NOTE TODO: Commented as this function takes time to run. Test is working. Uncomment to run the test
 class TestBatchProcessChatGPT(unittest.TestCase):
 
-    #process -> batch_process_chatgpt -> upload_batch_file 
+    
     # Case 11: Test batch process success
-    @patch('batch_operations.upload_batch_file', return_value = "Upload Batch Success")  # Mock upload_batch_file
+    @patch('batch_operations.upload_batch_file', return_value = "Upload Batch Success")  
     def test_process_batch_success(self, mock_upload_batch_file):
         file_path_str = "/home/dave/UWA/CITS3200-Group37/Tests/TestFiles/ImagesDir"
         process_batch(file_path_str, auto=False)
@@ -168,9 +148,11 @@ class TestBatchProcessChatGPT(unittest.TestCase):
         
             
     # Case 12: Test batch process with auto enabled
-    @patch('batch_operations.check_batch', return_value=("completed", "Processing success"))  # Mock check_batch
-    @patch('batch_operations.export_batch')  # Mock export_batch
-    @patch('batch_operations.upload_batch_file', return_value = "Batch ID")  # Mock upload_batch_file
+    @patch('batch_operations.check_batch', return_value=("completed", "Processing success")) 
+    @patch('batch_operations.export_batch')  
+    @patch('batch_operations.upload_batch_file', return_value = "Batch ID")
+    @patch('common.WAITING_TIMER', 3)  # Set the waiting timer to 0 for faster testing
+  
     def test_process_batch_auto_success(self, mock_upload_batch_file, mock_export_batch, mock_check_batch):
         file_path_str = "/home/dave/UWA/CITS3200-Group37/Tests/TestFiles/ImagesDir"
         process_batch(file_path_str, auto=True)
@@ -184,8 +166,10 @@ class TestBatchProcessChatGPT(unittest.TestCase):
         ("failed", "Processing failed"), 
         ("expired", "Processing expired"),
         ("cancelled", "Processing cancelled")
-    ])  # Mock check_batch to return different statuses
-    @patch('batch_operations.upload_batch_file', return_value="Batch ID")  # Mock upload_batch_file
+        ])
+    @patch('common.WAITING_TIMER', 3)  # Set the waiting timer to 0 for faster testing
+  
+    @patch('batch_operations.upload_batch_file', return_value="Batch ID") 
     def test_process_batch_auto_failure(self, mock_upload_batch_file, mock_check_batch):
         file_path_str = "/home/dave/UWA/CITS3200-Group37/Tests/TestFiles/ImagesDir"
         
@@ -205,109 +189,238 @@ class TestBatchProcessChatGPT(unittest.TestCase):
             self.assertGreaterEqual(mock_check_batch.call_count, 1)
             
             self.assertIn("Batch processing failed", str(context.exception))
+            self.assertIn(message, str(context.exception))
+    
+    pass        
             
-    # @patch('batch_operations.check_batch', return_value=("failed", "Processing failed"))  # Mock check_batch
-    # @patch('batch_operations.upload_batch_file', return_value = "Batch ID")  # Mock upload_batch_file
-    # @patch('batch_operations.export_batch')  # Mock export_batch
-    # def test_process_batch_auto_failure(self, mock_upload_batch_file, mock_check_batch, Mock_export_batch):
-    #     file_path_str = "/home/dave/UWA/CITS3200-Group37/Tests/TestFiles/ImagesDir"
-    #     mock_check_batch.return_value = {"failed": "Processing failed", 
-    #                                      "expired": "Processing expired",
-    #                                      "cancelled": "Processing cancelled",
-    #                                      "cancellied": "Processing cancelled"
-    #                                      }
-    #     for each in mock_check_batch.return_value:
-    #         with self.assertRaises(RuntimeError):
-    #             process_batch(file_path_str, auto=True)
-    #             mock_upload_batch_file.assert_called_once()
-    #             self.assertGreaterEqual(mock_check_batch.call_count, 1)
-    #             Mock_export_batch.assert_not_called()
-    #             self.assertEqual(mock_check_batch.return_value[each], mock_check_batch.return_value[each])
-    #     # with self.assertRaises(RuntimeError):
-    #     #     process_batch(file_path_str, auto=True)
-    #     #     mock_upload_batch_file.assert_called_once()
-    #     #     self.assertGreaterEqual(mock_check_batch.call_count, 1)
-        
-        
+
+class TestListAndCheckBatches(unittest.TestCase):
+    batch_status_dict = {
+    "validating": "the input file is being validated before the batch can begin",
+    "failed": "the input file has failed the validation process",
+    "in_progress": "the input file was successfully validated and the batch is currently being run",
+    "finalizing": "the batch has completed and the results are being prepared",
+    "completed": "the batch has been completed and the results are ready",
+    "expired": "the batch was not able to be completed within the 24-hour time window",
+    "cancelling": "the batch is being cancelled (may take up to 10 minutes)",
+    "cancelled": "the batch was cancelled"
+    }
     
-class TestOthers(unittest.TestCase):
-    pass
+    # Case 14: List Batches success
+    @patch('common.chatgpt_client')  
+    def test_list_batches_success(self, mock_chatgpt_client):
+        # Arrange
+        mock_batch_1 = MagicMock()
+        mock_batch_1.id = "batch_123"
+        mock_batch_1.status = "completed"
+        mock_batch_1.error_file_id = None  # No error
 
+        mock_batch_2 = MagicMock()
+        mock_batch_2.id = "batch_456"
+        mock_batch_2.status = "failed"
+        mock_batch_2.error_file_id = "error_file_789"  # Indicates an error
 
-
-
-
+        mock_chatgpt_client.batches.list.return_value = [mock_batch_1, mock_batch_2]
+        list_batches()
+        mock_chatgpt_client.batches.list.assert_called_once_with(limit=20)
     
-    # # Case 4: List Batches success
-    # @patch('batch_operation.common.chatgpt_client.batches.list')
-    # def test_list_batches_success(self, mock_batch_list):
-    #     mock_batch_list.return_value = [
-    #         MagicMock(id="batch_1", status="completed", error_file_id=None),
-    #         MagicMock(id="batch_2", status="failed", error_file_id="error_id")
-    #     ]
-    #     list_batches()
-    #     mock_batch_list.assert_called_once()
-    #     print("Test case for list_batches_success passed.")
-
-    # # Case 5: Check Batch success
-    # @patch('batch_operation.common.chatgpt_client.batches.retrieve')
-    # def test_check_batch_success(self, mock_batch_retrieve):
-    #     mock_batch_retrieve.return_value = MagicMock(status="completed", error_file_id=None)
-    #     status, status_message = check_batch("batch_id")
-    #     self.assertEqual(status, "completed")
-    #     self.assertEqual(status_message, "Processing success. You can now extract the file the file")
-    #     print("Test case for check_batch_success passed.")
-    
-    # # Case 6: Export Batch success
-    # @patch('batch_operation.common.chatgpt_client.batches.retrieve')
-    # @patch('batch_operation.common.chatgpt_client.files.content')
-    # @patch('batch_operation.generate_csv_output')
-    # def test_export_batch_success(self, mock_generate_csv, mock_file_content, mock_batch_retrieve):
-    #     mock_batch_retrieve.return_value = MagicMock(output_file_id="file_id", error_file_id=None)
-    #     mock_file_content.return_value.read.return_value = b'{"id":"file1","response":{"body":{"model":"gpt-4o-mini","choices":[{"message":{"content":"file details"}}]}}}\n'
-
-    #     export_batch("batch_id")
-    #     mock_file_content.assert_called_once()
-    #     mock_generate_csv.assert_called_once()
-    #     print("Test case for export_batch_success passed.")
-    
-    # # Case 7: Export Batch failure
-    # @patch('batch_operation.common.chatgpt_client.batches.retrieve')
-    # def test_export_batch_failure(self, mock_batch_retrieve):
-    #     mock_batch_retrieve.return_value = MagicMock(error_file_id="error_id")
-    #     with self.assertRaises(SystemExit):
-    #         export_batch("batch_id")
-    #     print("Test case for export_batch_failure passed.")
-
-    # # 
-    
-    #     # Case 9: Export Batch success with valid file
-    # @patch('batch_operation.common.chatgpt_client.batches.retrieve')
-    # @patch('batch_operation.common.chatgpt_client.files.content')
-    # def test_export_batch_with_valid_file_success(self, mock_file_content, mock_batch_retrieve):
-    #     mock_batch_retrieve.return_value = MagicMock(output_file_id="valid_file_id")
-    #     mock_file_content.return_value.read.return_value = b'{"id":"file1","response":{"body":{"model":"gpt-4o-mini","choices":[{"message":{"content":"valid file"}}]}}}\n'
-
-    #     export_batch("batch_id")
-    #     mock_file_content.assert_called_once()
-    #     print("Test case for export_batch_with_valid_file_success passed.")
-
-    # # Case 10: Export Batch failure due to invalid file size
-    # @patch('batch_operation.common.chatgpt_client.batches.retrieve')
-    # @patch('batch_operation.common.chatgpt_client.files.content')
-    # def test_export_batch_failure_due_to_invalid_file(self, mock_file_content, mock_batch_retrieve):
-    #     mock_batch_retrieve.return_value = MagicMock(error_file_id="invalid_file_id")
-    #     with self.assertRaises(SystemExit):
-    #         export_batch("batch_id")
-    #     print("Test case for export_batch_failure_due_to_invalid_file passed.")
+    #Case 15: List Batches failure due to authentication error
+    @patch('common.chatgpt_client')  
+    def test_list_batches_failure(self, mock_chatgpt_client):
+        mock_batches = MagicMock()
 
 
+        # Set the side effect for the list method to raise an AuthenticationError
+        mock_batches.list.side_effect = openai.AuthenticationError(
+            message="Authentication failed",
+            response=MagicMock(status=400, request=MagicMock()),              
+            body={"error": "Authentication failed"}  
+        )
+        mock_chatgpt_client.batches = mock_batches
 
-
-
+        with self.assertRaises(ValueError):
+            list_batches() 
+        mock_batches.list.assert_called_once()  # Ensure the list method was called once
         
 
+    #Case 16: List Batches failure test for all other errors. (BadRequestError, ConflictError, InternalServerError, NotFoundError, UnprocessableEntityError, RateLimitError)
+    @patch('common.chatgpt_client')  
+    def test_list_batches_failure(self, mock_chatgpt_client):
+        mock_batches = MagicMock()
 
+        mock_batches.list.side_effect = openai.InternalServerError(
+            message="Internal Server Error",  
+            response=MagicMock(status=500, request=MagicMock()),    
+            body={"error": "Internal Server Error"}
+        )
+
+        mock_chatgpt_client.batches = mock_batches
+
+        with self.assertRaises(Exception):
+            list_batches()  
+        mock_batches.list.assert_called_once()  
+
+
+
+
+    # Case 17: Test for all check batch statuses in the batch_status_dict success
+    @patch('common.chatgpt_client')  #
+    def test_check_batch_all_statuses(self, mock_chatgpt_client):
+        counter = 0
+        for status, message in self.batch_status_dict.items():
+            
+            mock_batch = MagicMock()
+            mock_batch.status = status
+            mock_batch.error_file_id = None
+
+            mock_chatgpt_client.batches.retrieve.return_value = mock_batch
+            status, status_message = check_batch("batch_123")
+            self.assertEqual(status, status)
+            self.assertEqual(status_message, message)
+            # to ensure that it is being called only once per status
+            mock_chatgpt_client.batches.retrieve.assert_called_once_with("batch_123")
+            mock_chatgpt_client.batches.retrieve.reset_mock()
+            counter +=1
+        # at the end assert taht the method was called 8 times
+        self.assertEqual(counter, 8)
+            
+    # Case 18: Test check batch failure due to invalid batch id
+    @patch('common.chatgpt_client')  
+    def test_check_batch_invalid_batch_id(self, mock_chatgpt_client):
+        mock_chatgpt_client.batches.retrieve.side_effect = openai.NotFoundError(
+            message="Batch not found",
+            response=MagicMock(),
+            body={"error": "Batch not found"}
+        )
+        with self.assertRaises(Exception):
+            check_batch("invalid_batch_id")
+        mock_chatgpt_client.batches.retrieve.assert_called_once_with("invalid_batch_id")
+        
+    # Case 19: Test check batch failure due to authentication error
+    @patch('common.chatgpt_client') 
+    def test_check_batch_failure(self, mock_chatgpt_client):
+        mock_chatgpt_client.batches.retrieve.side_effect = openai.AuthenticationError(
+            message="Authentication failed",
+            response=MagicMock(),
+            body={"error": "Authentication failed"}
+        )
+        with self.assertRaises(Exception):
+            check_batch("batch_123")
+        mock_chatgpt_client.batches.retrieve.assert_called_once_with("batch_123")
+
+class TestExportBatch(unittest.TestCase):
+    
+    # Case 20: Test export batch success
+    @patch('common.chatgpt_client') 
+    @patch('batch_operations.generate_csv_output', return_value=True)  
+    @patch('batch_operations.delete_exported_files')  
+    def test_export_batch_success(self, mock_delete_exported_files, mock_generate_csv_output, mock_chatgpt_client):
+        mock_batch = MagicMock()
+        mock_batch.output_file_id = "output_file_id"
+        mock_batch.error_file_id = None
+        mock_chatgpt_client.batches.retrieve.return_value = mock_batch
+
+        export_batch("batch_123")
+
+        mock_chatgpt_client.batches.retrieve.assert_called_once_with("batch_123")
+        mock_generate_csv_output.assert_called_once()
+        self.assertTrue(mock_generate_csv_output.return_value)
+        mock_delete_exported_files.assert_called_once_with(mock_chatgpt_client, mock_chatgpt_client.batches.retrieve.return_value)  
+        
+    # Case 21: Test export batch failure due to invalid batch id
+    @patch('common.chatgpt_client')  
+    def test_export_batch_invalid_batch_id(self, mock_chatgpt_client):
+        mock_chatgpt_client.batches.retrieve.side_effect = openai.BadRequestError(
+            message="Batch not found",
+            response=MagicMock(),
+            body={"error": "Batch not found"}
+        )
+        with self.assertRaises(ValueError):
+            export_batch("invalid_batch_id")
+        mock_chatgpt_client.batches.retrieve.assert_called_once_with("invalid_batch_id")
+        
+    # Case 22: Test export batch failure due to authentication error
+    @patch('common.chatgpt_client') 
+    def test_export_batch_failure(self, mock_chatgpt_client):
+        mock_chatgpt_client.batches.retrieve.side_effect = openai.AuthenticationError(
+            message="Authentication failed",
+            response=MagicMock(),
+            body={"error": "Authentication failed"}
+        )
+        with self.assertRaises(PermissionError):
+            export_batch("batch_123")
+        mock_chatgpt_client.batches.retrieve.assert_called_once_with("batch_123")
+        
+    # Case 23: Test export batch for failed batch processing
+    @patch('common.chatgpt_client')  
+    def test_export_batch_failed_batch(self, mock_chatgpt_client):
+        mock_batch = MagicMock()
+        mock_batch.output_file_id = None
+        mock_batch.error_file_id = "error_file_id"
+        
+        mock_chatgpt_client.batches.retrieve.return_value = mock_batch
+
+        with self.assertRaises(SystemExit) as cm:
+            export_batch("batch_123")
+        
+        # Assert that sys.exit was called with the correct exit code
+        self.assertEqual(cm.exception.code, 1)  # Verify that the exit code is 1 for failure
+        
+    # Case 24: Test export to batch that is already exported - cannot export again (once export succeeds it deletes the exported file stored in the server)    
+    @patch('common.chatgpt_client') 
+    def test_export_batch_already_exported(self, mock_chatgpt_client):
+        
+        # Simulate that the batch has been deleted from the server, raising BadRequestError
+        mock_chatgpt_client.files.retrieve.side_effect = openai.BadRequestError(
+            message="Missing file",
+            response=MagicMock(),
+            body={"error": "File not found"}
+        )
+        
+        # Simulate the batch retrieval returning a batch that has been exported (but file is no longer available)
+        mock_batch = MagicMock()
+        mock_batch.output_file_id = "output_file_id"
+        mock_batch.error_file_id = None  # No error, but output_file is missing
+        mock_chatgpt_client.batches.retrieve.return_value = mock_batch
+        
+        with self.assertRaises(SystemExit) as cm:
+            export_batch("batch123")  # Use the batch ID for an already exported batch
+            
+        self.assertEqual(cm.exception.code, 1)
+        mock_chatgpt_client.batches.retrieve.assert_called_once_with("batch123")
+        mock_chatgpt_client.files.retrieve.assert_called_once_with("output_file_id")
+        
+    # Case 25: Test export batch failing to save the exported file due to full disk space
+    @patch('common.chatgpt_client')
+    @patch('builtins.open', mock_open())
+    def test_export_batch_full_disk_space(self, mock_chatgpt_client):
+        mock_batch = MagicMock()
+        mock_batch.output_file_id = "output_file_id"
+        mock_batch.error_file_id = None
+        mock_chatgpt_client.batches.retrieve.return_value = mock_batch
+        
+        # Simulate that the file cannot be saved due to full disk space
+        with patch('builtins.open', side_effect=OSError("No space left on device")):
+            with self.assertRaises(OSError):
+                export_batch("batch_123")
+        
+        mock_chatgpt_client.batches.retrieve.assert_called_once_with("batch_123")
+        mock_chatgpt_client.files.retrieve.assert_called_once_with("output_file_id")
+        
+class TestDeleteExportedFiles(unittest.TestCase):
+    # Case 25: Test delete exported files success
+    @patch('common.chatgpt_client')  
+    def test_delete_exported_files_success(self, mock_chatgpt_client):
+        mock_batch = MagicMock()
+        mock_batch.output_file_id = "output_file_id"
+        mock_batch.error_file_id = None
+        
+        mock_chatgpt_client.batches.retrieve.return_value = mock_batch
+        delete_exported_files(mock_chatgpt_client, mock_batch)
+        
+        mock_chatgpt_client.files.delete.assert_called_with("output_file_id")
+        self.assertEqual(mock_chatgpt_client.files.delete.call_count, 2)
+    
 
 
 if __name__ == "__main__":
