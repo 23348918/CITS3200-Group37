@@ -27,7 +27,7 @@ This document provides a brief overview of how to use the program for various us
 
 # Configuration and Installation
 
-### Recquirements
+### Requirements
 - Operating System: Windows, MacOS, Ubuntu - Ubuntu Recommended 
 - GitHub Account
 - Python Version 3.8 and above
@@ -153,8 +153,62 @@ python3 main.py -s [strength] [path] [filter]
 
 
 # Testing
+To ensure that the installation is successful and working correctly, you can run the testing modules provided.
+
+Firstly, ensure pytest is installed:
+```bash
+pip install pytest
+```
+
+Move to the test directory:
+```bash
+cd Tests
+```
+
+To test all at once:
+```bash
+python3 -m unittest discover -s . -p "test_*.py"
+```
+
+To test individually:
+```bash
+python3 -m unittest test_[name].py -v
+
+```
+
 
 # Contributors
+We would like to thank the individuals that have contributed to this project:
+### Team
+**Cohen Rafiq**
+- **Role:** Project Manager, Developer
+- **Contributions:** Gemini API functionality, image manipulation, formatting, CSV output, red teaming
+- **Contact:** 23348918@student.uwa.edu.au
+
+**Joel Cornfield**
+- **Role:** Developer, Tester
+- **Contributions:** Image manipulation, claude API functionality, red teaming, testing
+- **Contact:** 23749925@student.uwa.edu.au
+
+**Feiyue Zhang**
+- **Role:** Developer, Tester
+- **Contributions:** CSV output, testing and red teaming
+- **Contact:** 23734789@student.uwa.edu.au
+
+**Lance Basa**
+- **Role:** Developer, Tester
+- **Contributions:** ChatGPT API functionality, ChatGPT batch processing, primary tester and red teaming
+- **Contact:** 23420659@student.uwa.edu.au
+
+**Jack Langoulant**
+- **Role:** Project Manager, Developer, Tester
+- **Contributions:** Video functionality, ChatGPT API functionality, testing and red teaming
+- **Contact:** 23344707@student.uwa.edu.au
+
+**Lewis Wood**
+- **Role:** Project Manager, Developer
+- **Contributions:** Formatting, Command Line Interface, custom CSV output, code integration and red teaming
+- **Contact:** 23104581@student.uwa.edu.au
 
 # License
 This project is licensed under the Creative Commons License - see the [LICENSE](LICENSE) file for details.
