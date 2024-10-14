@@ -28,7 +28,7 @@ This document provides a brief overview of how to use the program for various us
 # Configuration and Installation
 
 ### Requirements
-- Operating System: Windows, MacOS, Ubuntu - Ubuntu Recommended 
+- Operating System: Windows, Ubuntu - Ubuntu Recommended 
 - GitHub Account
 - Python Version 3.8 and above
 
