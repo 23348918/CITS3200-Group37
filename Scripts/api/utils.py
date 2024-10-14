@@ -45,6 +45,9 @@ def ask_save_location(default_filename: str):
     root = tk.Tk()
     root.withdraw()
     
+    root.attributes("-topmost", True)
+    root.update()
+    
     file_path = filedialog.asksaveasfilename(
         defaultextension=".csv",
         filetypes=[("CSV format", "*.csv"),("Text files", "*.txt"), ("All files", "*.*")],
@@ -155,8 +158,3 @@ def encode_video(video_path: Path, frame_rate_divisor: int = 2) -> list[str]:
 
     cam.release()
     
-    # Write to file
-    with open("VideoOut.txt", "w") as video_file:
-        for item in images:
-            video_file.write(item + '\n')  # Ensure each base64 string is on a new line
-    return images
