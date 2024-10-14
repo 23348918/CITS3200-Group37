@@ -141,7 +141,7 @@ def response_to_dictionary(response: str, model_name: str) -> dict[str, str]:
     response_dictionary: dict[str, str] = {"model": model_name}
     for json_section in common.AnalysisResponse.model_fields.keys():
         match: re.Match[str] = re.search(
-            rf'(?i)["\']?({json_section})["\']?[:]\s*([\[]?(?:["\']?[\w ]*["\']?[,]?[ ]*)+[\]]?)', response)
+            rf'(?i)["\']?({json_section})["\']?[:]\s*["\']?((?:[^"]*)+)', response)
         match_output: str = match.group(2) if match else ""
         match_output = match_output.replace('"', '').replace("'", '').replace('[', '').replace(']', '').strip()
         response_dictionary[json_section] = match_output
