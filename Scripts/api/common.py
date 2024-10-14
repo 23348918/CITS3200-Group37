@@ -25,7 +25,6 @@ class AnalysisResponse(BaseModel):
     description: str
     reasoning: str
     action: str
-    # speed: str
 
 # Constants
 WAITING_TIMER: int = 15  # Waiting timer in seconds

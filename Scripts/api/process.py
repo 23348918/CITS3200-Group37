@@ -42,8 +42,6 @@ def process_model(model_name: str, file_path_str: str) -> None:
         print(f"{file_path} is not a valid file or directory.")
         sys.exit(1)
 
-    # TODO: Remove print
-    print(request_output)
 
     generate_csv_output(request_output)
 

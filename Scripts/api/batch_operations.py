@@ -140,12 +140,11 @@ def bytes_to_dicts(response_bytes: bytes) -> list[dict[str, str]]:
     response_str: str = response_bytes.decode("utf-8")
     response_lines: list[str] = response_str.splitlines()
     response_dicts: list = []
-    print("DynamicAnalysisResponse.model_fields:", common.AnalysisResponse.model_fields)
     for line in response_lines:
         json_obj: dict = json.loads(line)
         file_name: str = json_obj['id']
         model: str = json_obj['response']['body']['model']
-        content: str = json_obj['response']['body']['choices'][0]['message']['content'].replace("*", "")
+        content: str = json_obj['response']['body']['choices'][0]['message']['content'].replace("*", "").replace("#", "")
         pattern: re.Pattern = re.compile(r'(\w+):\s*(.*?)(?=\n\w+:|$)', re.DOTALL | re.IGNORECASE)
         matches: list[tuple[str, str]] = pattern.findall(content)
         response_dict: dict[str, str] = {match[0].lower(): match[1].strip() for match in matches}
@@ -310,12 +309,9 @@ def delete_exported_files(client: OpenAI, batch_results) -> None:
 
     if batch_results.input_file_id:
         client.files.delete(batch_results.input_file_id)
-        # print (batch_results.input_file_id)
 
     if batch_results.output_file_id:
         client.files.delete(batch_results.output_file_id)
-        # print (batch_results.output_file_id)
 
     if batch_results.error_file_id:
         client.files.delete(batch_results.error_file_id)
-        # print (batch_results.error_file_id)
