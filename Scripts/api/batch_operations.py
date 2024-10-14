@@ -124,18 +124,12 @@ def export_batch(batch_id: str) -> None:
 
     response_bytes: bytes = common.chatgpt_client.files.content(output_file_id).read()
     response_dicts: list[dict[str, str]] = bytes_to_dicts(response_bytes)
-    try:
-        with open("../../Output/sampleTEst.json", 'w') as json_file:
-            json.dump(response_dicts, json_file, indent=4)  # Use indent for pretty formatting
-        print(f"Data saved to sampleTEst.json successfully.")
-    except Exception as e:
-        print(f"Error saving data to sampleTEst.json: {e}")
-        
-    extportResult = generate_csv_output('chatgpt', response_dicts)
+
+    exportResult = generate_csv_output('chatgpt', response_dicts)
     
     
     
-    if extportResult:
+    if exportResult:
         delete_exported_files(common.chatgpt_client, batch_results)
         verbose_print("Cleaning up batch relevant files.")
     else:
