@@ -157,4 +157,6 @@ def encode_video(video_path: Path, frame_rate_divisor: int = 2) -> list[str]:
         count += 1
 
     cam.release()
+
+    return images
     
