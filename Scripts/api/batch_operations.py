@@ -1,7 +1,7 @@
 import common
 from common import verbose_print
 from pathlib import Path
-from utils import get_file_dict, encode_image, encode_video, create_dynamic_response_model
+from utils import get_file_dict, encode_image, encode_video
 from process import generate_csv_output
 import time
 import json
@@ -83,10 +83,6 @@ def check_batch(batch_id: str) -> tuple[str, str]:
     
     if batch_status.error_file_id:
         status_message: str = "Processing failed"
-    # elif batch_status.status == "completed":
-    #     status_message: str = "Processing success. You can now extract the file the file"
-    # else:
-    #     status_message: str = "Processing..."   
     else:
         status_message: str = batch_status_dict[batch_status.status]
     return (batch_status.status, status_message)
@@ -128,15 +124,13 @@ def export_batch(batch_id: str) -> None:
 
     response_bytes: bytes = common.chatgpt_client.files.content(output_file_id).read()
     response_dicts: list[dict[str, str]] = bytes_to_dicts(response_bytes)
-    # TODO: remove later
-    # try:
-    #     with open("../../Output/sampleTEst.json", 'w') as json_file:
-    #         json.dump(response_bytes.decode("utf-8"), json_file, indent=4)  # Use indent for pretty formatting
-    #     print(f"Data saved to sampleTEst.json successfully.")
-    # except Exception as e:
-    #     print(f"Error saving data to sampleTEst.json: {e}")
-    
-    # sys.exit(1)
+    try:
+        with open("../../Output/sampleTEst.json", 'w') as json_file:
+            json.dump(response_dicts, json_file, indent=4)  # Use indent for pretty formatting
+        print(f"Data saved to sampleTEst.json successfully.")
+    except Exception as e:
+        print(f"Error saving data to sampleTEst.json: {e}")
+        
     extportResult = generate_csv_output(response_dicts)
     
     
@@ -161,13 +155,12 @@ def bytes_to_dicts(response_bytes: bytes) -> list[dict[str, str]]:
     response_str: str = response_bytes.decode("utf-8")
     response_lines: list[str] = response_str.splitlines()
     response_dicts: list = []
-    DynamicAnalysisResponse = create_dynamic_response_model(common.custom_str)
-    verbose_print("DynamicAnalysisResponse.model_fields:", common.AnalysisResponse.model_fields)
+      
     for line in response_lines:
         json_obj: dict = json.loads(line)
         file_name: str = json_obj['custom_id']
         model: str = json_obj['response']['body']['model']
-        content: str = json_obj['response']['body']['choices'][0]['message']['content'].replace("*", "")
+        content: str = json_obj['response']['body']['choices'][0]['message']['content'].replace("*", "").replace("#", "")
         pattern: re.Pattern = re.compile(r'(\w+):\s*(.*?)(?=\n\w+:|$)', re.DOTALL | re.IGNORECASE)
         matches: list[tuple[str, str]] = pattern.findall(content)
         response_dict: dict[str, str] = {match[0].lower(): match[1].strip() for match in matches}
@@ -179,37 +172,6 @@ def bytes_to_dicts(response_bytes: bytes) -> list[dict[str, str]]:
                 response_dict[key] = "NA"
         response_dicts.append(response_dict)
     return response_dicts
-
-    # # This solution  works but it removes the whole entry if any of the required fields are missing
-    # response_str: str = response_bytes.decode("utf-8")
-    # response_lines: list[str] = response_str.splitlines()
-    # response_dicts: list = []
-    # print("DynamicAnalysisResponse.model_fields:", common.AnalysisResponse.model_fields)
-    # for line in response_lines:
-    #     json_obj: dict = json.loads(line)
-    #     file_name: str = json_obj['id']
-    #     model: str = json_obj['response']['body']['model']
-    #     content: str = json_obj['response']['body']['choices'][0]['message']['content'].replace("*", "")
-    #     pattern: re.Pattern = re.compile(r'(\w+):\s*(.*?)(?=\n\w+:|$)', re.DOTALL | re.IGNORECASE)
-    #     matches: list[tuple[str, str]] = pattern.findall(content)
-    #     response_dict: dict[str, str] = {match[0].lower(): match[1].strip() for match in matches}
-    #     response_dict['file_name'] = file_name
-    #     response_dict['model'] = model
-    #     #check the resposne dict if it has the required fields and values are not empty
-    #     isComplete = True
-    #     for key, value in common.AnalysisResponse.model_fields.items():
-    #         if key not in response_dict:
-    #             isComplete = False
-    #             break
-    #         if not response_dict[key]: 
-    #             isComplete = False
-    #             break
-    #     if isComplete:
-    #         response_dicts.append(response_dict)
-        
-        
-    # return response_dicts
-
 
     
 
@@ -447,5 +409,3 @@ def delete_exported_files(client: OpenAI, batch_results) -> None:
                 
     except Exception as e:
         verbose_print(f"Error deleting files. Bad batch input: {e}") 
-        
-                

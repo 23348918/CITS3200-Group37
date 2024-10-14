@@ -24,6 +24,10 @@ def process_each_model(model_name: str, file_path: Path) -> list[dict[str, Any]]
         model_name: The name of the model to process.
         file_path_str: The path to the file or directory to process.
     """
+    verbose_print(f"Processing model: {model_name}")
+    if model_name not in common.LLMS:
+        print("Invalid model name")
+        sys.exit(1)
     if file_path.is_file() and file_path.suffix in common.VALID_EXTENSIONS:
         verbose_print(f"Sending {file_path} to {model_name}...")
         request_output: list[dict[str, Any]] = [REQUEST_FUNCTIONS[model_name](file_path)]
@@ -72,44 +76,21 @@ def generate_csv_output(model_name, data: dict[str, Any], output_directory: Opti
     
 
     rows: list[dict[str, Any]] = []
+    data = sorted(data, key=lambda x: (x["file_name"], x["model"]))
+    for single_data in data:
+        row = {
+                'File_name': single_data.get('file_name', ""),
+                'Model': single_data.get('model', ""),
+        }
+        for response_column in common.AnalysisResponse.model_fields.keys():
+            row[response_column] = single_data.get(response_column, "")
 
+        for key, value in single_data.items():
+            if key not in row:
+                row[key.capitalize()] = value
+        rows.append(row)
+     
 
-    if model_name == "all":
-        images_length: int = int(len(data) / 3)
-
-        for i in range(images_length):
-            new_data_row = {}
-            new_data_row['ChatGPT File_name'] = data[i]['file_name']
-            new_data_row['ChatGPT Model'] = data[i]['model']
-            new_data_row['ChatGPT Description'] = data[i]['description']
-            new_data_row['ChatGPT Reasoning'] = data[i]['reasoning']
-            new_data_row['ChatGPT Action'] = data[i]['action']
-            new_data_row['Gemini File_name'] = data[i + images_length]['file_name']
-            new_data_row['Gemini Model'] = data[i + images_length]['model']
-            new_data_row['Gemini Description'] = data[i + images_length]['description']
-            new_data_row['Gemini Reasoning'] = data[i + images_length]['reasoning']
-            new_data_row['Gemini Action'] = data[i + images_length]['action']
-            new_data_row['Claude File_name'] = data[i + (images_length * 2)]['file_name']
-            new_data_row['Claude Model'] = data[i + (images_length * 2)]['model']
-            new_data_row['Claude Description'] = data[i + (images_length * 2)]['description']
-            new_data_row['Claude Reasoning'] = data[i + (images_length * 2)]['reasoning']
-            new_data_row['Claude Action'] = data[i + (images_length * 2)]['action']
-            rows.append(new_data_row)
-    else:
-        for single_data in data:
-            row = {
-                    'File_name': single_data['file_name'],
-                    'Model': single_data['model'],
-                    'Description': single_data['description'],
-                    'Reasoning': single_data['reasoning'],
-                    'Action': single_data['action']
-            }
-
-            for key, value in single_data.items():
-                if key not in row:
-                    row[key.capitalize()] = value
-            rows.append(row)
-            
     df: pd.DataFrame = pd.DataFrame(rows)
     if output_directory is None:
         csv_file_path = ask_save_location("result.csv")

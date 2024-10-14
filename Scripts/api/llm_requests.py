@@ -2,11 +2,12 @@ from pathlib import Path
 from copy import deepcopy
 import common
 from common import verbose_print
-from utils import get_media_type, encode_image, encode_video, create_dynamic_response_model
+from utils import get_media_type, encode_image, encode_video
 from PIL import Image
 import re
 import google.generativeai as genai
 import time
+import json
 
 def chatgpt_request(file_path: Path) -> dict[str, str]:
     """Request for a single file to the ChatGPT API.
@@ -21,8 +22,9 @@ def chatgpt_request(file_path: Path) -> dict[str, str]:
         encoded_file: list[str] = encode_video(file_path)
     else:
         encoded_file: list[str] = [encode_image(file_path)]
-    DynamicAnalysisResponse = create_dynamic_response_model(common.custom_str)
+
     message: str = deepcopy(common.USER_PROMPT)
+
     for image in encoded_file:
         message["content"].append({
             "type": "image_url",
@@ -37,7 +39,7 @@ def chatgpt_request(file_path: Path) -> dict[str, str]:
     response: str = common.chatgpt_client.beta.chat.completions.parse(
         model="gpt-4o-mini",
         messages=messages,
-        response_format=DynamicAnalysisResponse
+        response_format=common.AnalysisResponse
     )
     full_response: dict = response.dict()
     response_dict: dict = full_response['choices'][0]['message']['parsed']
@@ -65,16 +67,29 @@ def gemini_request(file_path: Path) -> dict[str, str]:
     else:
         file = Image.open(file_path)
 
-    DynamicAnalysisResponse = create_dynamic_response_model(common.custom_str)
-    model = genai.GenerativeModel(model_name="models/gemini-1.5-pro")
+    model = genai.GenerativeModel(model_name="gemini-1.5-pro")
+    safe = [
+        {
+            "category": "HARM_CATEGORY_DANGEROUS",
+            "threshold": "BLOCK_NONE",
+        },
+        {
+            "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+            "threshold": "BLOCK_NONE",
+        },
+    ]
+
     response: str = model.generate_content(
-        [common.prompt, file],
+        [file, common.prompt],
         generation_config=genai.GenerationConfig(
             response_mime_type="application/json",
-            response_schema = list[DynamicAnalysisResponse],
-            max_output_tokens = common.MAX_OUTPUT_TOKENS_GEMINI)
+            temperature=0.3,
+            # I have actually no clue but for some reason response_schema breaks everything
+            # response_schema = common.AnalysisResponse,
+            max_output_tokens = common.MAX_OUTPUT_TOKENS_GEMINI),
+            safety_settings=safe
             )
-    response_dict: dict = response_to_dictionary(response.text, "models/gemini-1.5-pro")
+    response_dict: dict = response_to_dictionary(response.text, "gemini-1.5-pro")
     response_dict["file_name"] = file_path.name
     return response_dict
 
@@ -124,9 +139,12 @@ def response_to_dictionary(response: str, model_name: str) -> dict[str, str]:
     Returns:
         The response as a dictionary."""
     response_dictionary: dict[str, str] = {"model": model_name}
-    DynamicAnalysisResponse = create_dynamic_response_model(common.custom_str)
-    for json_section in DynamicAnalysisResponse.model_fields.keys():
+    for json_section in common.AnalysisResponse.model_fields.keys():
         match: re.Match[str] = re.search(
-        f'"{json_section}":\\s*["]?([^",}}]*)["]?', response)
-        response_dictionary[json_section] = match.group(1) if match else ""
+            rf'(?i)["\']?({json_section})["\']?[:]\s*([\[]?(?:["\']?[\w ]*["\']?[,]?[ ]*)+[\]]?)', response)
+        match_output: str = match.group(2) if match else ""
+        if match_output[-1] == ",":
+            match_output = match_output[:-1]
+        match_output = match_output.replace('"', '').replace("'", '').replace('[', '').replace(']', '').strip()
+        response_dictionary[json_section] = match_output
     return response_dictionary
