@@ -1,6 +1,6 @@
 import argparse
 import common
-from common import set_verbose, set_custom, verbose_print
+from common import set_verbose, set_custom, verbose_print, set_prompt
 from auth import authenticate
 from process import process_model
 from batch_operations import print_check_batch, export_batch, list_batches, process_batch

@@ -28,7 +28,6 @@ def process_each_model(model_name: str, file_path: Path) -> list[dict[str, Any]]
     if model_name not in common.LLMS:
         print("Invalid model name")
         sys.exit(1)
-    file_path: Path = Path(file_path_str)
     if file_path.is_file() and file_path.suffix in common.VALID_EXTENSIONS:
         verbose_print(f"Sending {file_path} to {model_name}...")
         request_output: list[dict[str, Any]] = [REQUEST_FUNCTIONS[model_name](file_path)]
@@ -77,7 +76,7 @@ def generate_csv_output(model_name, data: dict[str, Any], output_directory: Opti
     
 
     rows: list[dict[str, Any]] = []
-    data = sorted(data, key=lambda x: (x["image_name"], x["model_name"]))
+    data = sorted(data, key=lambda x: (x["file_name"], x["model"]))
     for single_data in data:
         row = {
                 'File_name': single_data.get('file_name', ""),
