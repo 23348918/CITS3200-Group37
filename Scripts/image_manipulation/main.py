@@ -44,25 +44,30 @@ VIDEO_EXTENSIONS: Tuple[str, ...] = (
 )
 
 def parse_arguments() -> argparse.Namespace:
-    """Parses command-line arguments for applying filters to an image.
+    """Parses command-line arguments for applying filters to an image or video.
     
     Returns:
         Parsed command-line arguments.
     """
-    parser: argparse.ArgumentParser = argparse.ArgumentParser(description="Apply filters or overlays to an image.")
+    parser: argparse.ArgumentParser = argparse.ArgumentParser(description="Apply filters or overlays to an image or video.")
     parser.add_argument("input_path",
                         type=str,
-                        help="Path to the input directory."
+                        help="Path to the input directory or file."
     )
     parser.add_argument("effect",
                         type=str,
                         choices=list(FILTERS.keys()) + list(OVERLAYS.keys()),
-                        help="Which filter or overlay will be applied to the image."
+                        help="Which filter or overlay will be applied to the image or video."
     )
     parser.add_argument("-s", "--strength",
                         type=float,
                         default=0.5,
                         help="If a filter is chosen, the strength of the filter from 0.0 to 1.0. Default is 0.5."
+    )
+    parser.add_argument("-o", "--output_path",
+                        type=str,
+                        default="Output",
+                        help="Optional output directory to save processed files. Default is './Output'."
     )
     parser.add_argument("-v", "--verbose",
                         action="store_true",
@@ -92,17 +97,17 @@ def directory_iterator(directory: Path, verbose: bool = False) -> Iterator[Path]
                     print(f"Processing file: {path}")
                 yield path
 
-def process_image(file_path: Path, effect_name: str, strength: float, verbose: bool = False) -> None:
-    """Applies the given effect to an image and saves it in a folder called "Output".
+def process_image(file_path: Path, effect_name: str, strength: float, output_dir: Path, verbose: bool = False) -> None:
+    """Applies the given effect to an image and saves it to the specified output directory.
     
     Args:
         file_path: Path to the input image file.
         effect_name: Name of the effect to apply.
         strength: Strength of the filter effect.
+        output_dir: Directory where the processed image will be saved.
         verbose: Whether to print detailed output during processing.
     """
-    output_dir = Path("Output")
-    output_dir.mkdir(exist_ok=True)  # Create output directory if it doesn't exist
+    output_dir.mkdir(parents=True, exist_ok=True)  # Create output directory if it doesn't exist
     output_path = output_dir / f"{effect_name}_{file_path.name}"
 
     image: Image.Image = Image.open(file_path)
@@ -122,13 +127,14 @@ def process_image(file_path: Path, effect_name: str, strength: float, verbose: b
     if verbose:
         print(f"Saved processed image to {output_path}")
 
-def process_video(file_path: Path, effect_name: str, strength: float, verbose: bool = False) -> None:
-    """Applies the given effect to a video and saves it in a folder called 'Output'.
+def process_video(file_path: Path, effect_name: str, strength: float, output_dir: Path, verbose: bool = False) -> None:
+    """Applies the given effect to a video and saves it to the specified output directory.
 
     Args:
         file_path: Path to the input video file.
         effect_name: Name of the effect to apply.
         strength: Strength of the filter effect.
+        output_dir: Directory where the processed video will be saved.
         verbose: Whether to print detailed output during processing.
     """
     cap = cv2.VideoCapture(str(file_path))
@@ -140,8 +146,7 @@ def process_video(file_path: Path, effect_name: str, strength: float, verbose: b
     width: int = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height: int = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-    output_dir = Path("Output")
-    output_dir.mkdir(exist_ok=True)  # Create output directory if it doesn't exist
+    output_dir.mkdir(parents=True, exist_ok=True)  # Create output directory if it doesn't exist
     output_path = output_dir / f"{effect_name}_{file_path.name}"
 
     fourcc: int = cv2.VideoWriter_fourcc(*'mp4v')
@@ -185,6 +190,7 @@ def main() -> None:
     """Main function to parse arguments, apply the selected filter to images or videos, and save the results."""
     args: argparse.Namespace = parse_arguments()
     input_path = Path(args.input_path)
+    output_dir = Path(args.output_path)
     if not input_path.is_absolute():
         print("Please provide full path to the input.")
         exit(1)
@@ -193,9 +199,9 @@ def main() -> None:
         file_extension = file_path.suffix.lower()
 
         if file_extension in VIDEO_EXTENSIONS:
-            process_video(file_path, args.effect, args.strength, args.verbose)
+            process_video(file_path, args.effect, args.strength, output_dir, args.verbose)
         elif file_extension in IMAGE_EXTENSIONS:
-            process_image(file_path, args.effect, args.strength, args.verbose)
+            process_image(file_path, args.effect, args.strength, output_dir, args.verbose)
 
 if __name__ == "__main__":
     main()
