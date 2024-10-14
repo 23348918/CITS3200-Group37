@@ -143,8 +143,6 @@ def response_to_dictionary(response: str, model_name: str) -> dict[str, str]:
         match: re.Match[str] = re.search(
             rf'(?i)["\']?({json_section})["\']?[:]\s*([\[]?(?:["\']?[\w ]*["\']?[,]?[ ]*)+[\]]?)', response)
         match_output: str = match.group(2) if match else ""
-        if match_output[-1] == ",":
-            match_output = match_output[:-1]
         match_output = match_output.replace('"', '').replace("'", '').replace('[', '').replace(']', '').strip()
         response_dictionary[json_section] = match_output
     return response_dictionary
