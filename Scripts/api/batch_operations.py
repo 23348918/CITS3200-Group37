@@ -115,6 +115,13 @@ def export_batch(batch_id: str) -> None:
 
     response_bytes: bytes = common.chatgpt_client.files.content(output_file_id).read()
     response_dicts: list[dict[str, str]] = bytes_to_dicts(response_bytes)
+    # TODO: remove later
+    try:
+        with open("../../Output/sampleTEst.json", 'w') as json_file:
+            json.dump(response_dicts, json_file, indent=4)  # Use indent for pretty formatting
+        print(f"Data saved to sampleTEst.json successfully.")
+    except Exception as e:
+        print(f"Error saving data to sampleTEst.json: {e}")
     
     extportResult = generate_csv_output(response_dicts)
     
@@ -142,7 +149,7 @@ def bytes_to_dicts(response_bytes: bytes) -> list[dict[str, str]]:
     response_dicts: list = []
     for line in response_lines:
         json_obj: dict = json.loads(line)
-        file_name: str = json_obj['id']
+        file_name: str = json_obj['custom_id']
         model: str = json_obj['response']['body']['model']
         content: str = json_obj['response']['body']['choices'][0]['message']['content'].replace("*", "").replace("#", "")
         pattern: re.Pattern = re.compile(r'(\w+):\s*(.*?)(?=\n\w+:|$)', re.DOTALL | re.IGNORECASE)
@@ -150,8 +157,44 @@ def bytes_to_dicts(response_bytes: bytes) -> list[dict[str, str]]:
         response_dict: dict[str, str] = {match[0].lower(): match[1].strip() for match in matches}
         response_dict['file_name'] = file_name
         response_dict['model'] = model
+        # check the resposne dict if it has the required keys and values. if keys are missing or values are empty, add the missing key with NA value
+        for key, value in common.AnalysisResponse.model_fields.items():
+            if key not in response_dict:
+                response_dict[key] = "NA"
         response_dicts.append(response_dict)
     return response_dicts
+
+    # # This solution  works but it removes the whole entry if any of the required fields are missing
+    # response_str: str = response_bytes.decode("utf-8")
+    # response_lines: list[str] = response_str.splitlines()
+    # response_dicts: list = []
+    # print("DynamicAnalysisResponse.model_fields:", common.AnalysisResponse.model_fields)
+    # for line in response_lines:
+    #     json_obj: dict = json.loads(line)
+    #     file_name: str = json_obj['id']
+    #     model: str = json_obj['response']['body']['model']
+    #     content: str = json_obj['response']['body']['choices'][0]['message']['content'].replace("*", "")
+    #     pattern: re.Pattern = re.compile(r'(\w+):\s*(.*?)(?=\n\w+:|$)', re.DOTALL | re.IGNORECASE)
+    #     matches: list[tuple[str, str]] = pattern.findall(content)
+    #     response_dict: dict[str, str] = {match[0].lower(): match[1].strip() for match in matches}
+    #     response_dict['file_name'] = file_name
+    #     response_dict['model'] = model
+    #     #check the resposne dict if it has the required fields and values are not empty
+    #     isComplete = True
+    #     for key, value in common.AnalysisResponse.model_fields.items():
+    #         if key not in response_dict:
+    #             isComplete = False
+    #             break
+    #         if not response_dict[key]: 
+    #             isComplete = False
+    #             break
+    #     if isComplete:
+    #         response_dicts.append(response_dict)
+        
+        
+    # return response_dicts
+
+
     
 
 def list_batches() -> None:
