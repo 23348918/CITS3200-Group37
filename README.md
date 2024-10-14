@@ -7,7 +7,7 @@
 - [Usage](#usage)
 - [Testing](#testing)
 - [Contributors](#contributors)
-- [License](#licence)
+- [License](#license)
 - [Acknowledgements](#acknowledgements)
 
 
@@ -100,6 +100,10 @@ python3 main.py gemini -p path/to/file -v
 python3 main.py gemini -p path/to/file -c path/to/custom.txt
 ```
 
+#### Custom prompt 2 
+```bash
+python3 main.py gemini -p path/to/file --prompt "\n{enter text here}"
+```
 ### 2: Comparing model functionality for an image, video or folder
 
 #### Comparing Models

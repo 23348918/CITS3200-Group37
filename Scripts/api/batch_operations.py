@@ -131,7 +131,7 @@ def export_batch(batch_id: str) -> None:
     except Exception as e:
         print(f"Error saving data to sampleTEst.json: {e}")
         
-    extportResult = generate_csv_output(response_dicts)
+    extportResult = generate_csv_output('chatgpt', response_dicts)
     
     
     
