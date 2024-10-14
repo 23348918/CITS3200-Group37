@@ -199,7 +199,7 @@ We would like to thank the individuals that have contributed to this project:
 
 **Joel Cornfield**
 - **Role:** Developer, Tester
-- **Contributions:** Image manipulation, claude API functionality, red teaming, testing
+- **Contributions:** Image manipulation, claude API functionality, parallel processing, red teaming, testing
 - **Contact:** 23749925@student.uwa.edu.au
 
 **Feiyue Zhang**
@@ -213,8 +213,8 @@ We would like to thank the individuals that have contributed to this project:
 - **Contact:** 23420659@student.uwa.edu.au
 
 **Jack Langoulant**
-- **Role:** Project Manager, Developer, Tester
-- **Contributions:** Video functionality, ChatGPT API functionality, testing and red teaming
+- **Role:** Project Manager, Developer, Tester, Lead Code Reviewer
+- **Contributions:** Video functionality, ChatGPT API functionality, testing and red teaming, code review
 - **Contact:** 23344707@student.uwa.edu.au
 
 **Lewis Wood**
