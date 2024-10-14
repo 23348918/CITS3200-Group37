@@ -100,7 +100,15 @@ python3 main.py gemini -p path/to/file -v
 python3 main.py gemini -p path/to/file -c path/to/custom.txt
 ```
 
-### 2: Batch processing with ChatGPT
+### 2: Comparing model functionality for an image, video or folder
+
+#### Comparing Models
+```bash
+python3 main.py all -p path/to/file
+```
+Using ```all``` in place of an LLM will run all LLMs and output to the same spreadsheet for easy comparison.
+
+### 3: Batch processing with ChatGPT
 
 **Command:**
 
@@ -141,7 +149,7 @@ python3 main.py chatgpt -e batch_no
 python3 main.py chatgpt -l
 ```
 
-### 3: Interference Program
+### 4: Interference Program
 ```bash
 python3 main.py -s [strength] [path] [filter]
 ```
