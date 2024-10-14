@@ -1,4 +1,5 @@
 from pathlib import Path
+from copy import deepcopy
 import common
 from common import verbose_print
 from utils import get_media_type, encode_image, encode_video
@@ -16,12 +17,14 @@ def chatgpt_request(file_path: Path) -> dict[str, str]:
     
     Returns:
         The analysis response as a dictionary."""
-    is_video: bool = file_path.suffix in common.VIDEO_EXTENSIONS
+    is_video: bool = file_path.suffix in common.VALID_EXTENSIONS
     if is_video:
         encoded_file: list[str] = encode_video(file_path)
     else:
         encoded_file: list[str] = [encode_image(file_path)]
-    message: str = common.USER_PROMPT
+
+    message: str = deepcopy(common.USER_PROMPT)
+
     for image in encoded_file:
         message["content"].append({
             "type": "image_url",
@@ -105,7 +108,7 @@ def claude_request(file_path: Path) -> dict[str, str]:
     else:
         media_type: str = get_media_type(file_path)
         encoded_file: str = [encode_image(file_path)]
-    message: str = common.USER_PROMPT
+    message: str = deepcopy(common.USER_PROMPT)
     for image in encoded_file:
         message["content"].append({
             "type": "image",

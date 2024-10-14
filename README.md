@@ -27,15 +27,15 @@ This document provides a brief overview of how to use the program for various us
 
 # Configuration and Installation
 
-### Recquirements
+### Requirements
 - Operating System: Windows, MacOS, Ubuntu - Ubuntu Recommended 
 - GitHub Account
 - Python Version 3.8 and above
 
 ### Steps
-1. Clone the repository:
+1. Clone the Github repository:
     ```
-    git clonehttps://github.com/23348918/CITS3200-Group37
+    git clone https://github.com/23348918/CITS3200-Group37
     ```
 2. From root of directory, create virtual environment and activate it. For more information on Virtual Environment setup see [VenvSetup.md](VenvSetup.md)
     ```
@@ -51,7 +51,7 @@ This document provides a brief overview of how to use the program for various us
     mkdir -p Private/ClientKeys
     echo "Enter ChatGPT Key here" > Private/ClientKeys/chatgpt-api.txt
     echo "Enter Claude Key here" > Private/ClientKeys/claude-api.txt
-    echo "Enter Gemeni Key here" > Private/ClientKeys/gemini-api.txt
+    echo "Enter Gemini Key here" > Private/ClientKeys/gemini-api.txt
     ```
     **`NOTE:`** Please enter the keys for the respective LLM into the placeholder. 
 
@@ -64,64 +64,151 @@ cd Scripts/api
 python3 main.py
 ```
 
+To start the assisting interference program program, locate the python script `main.py` under `Scripts/image_manipulation/main.py` or from the root of the repository, run the following:
+```
+cd Scripts/image_manipulation
+python3 main.py
+```
 
-### Use Cases
- 1. LLM Model Processing
 
-    **Command:**
+## Use Cases
 
-    ```bash
-    python3 main.py model -process [path] -prompt [prompt] --verbose
-    ```
-
-    - model: Specifies the model type (i.e. ChatGPT).
-    - -process path: Indicates that you want to process the model at the given path.
-    - -prompt prompt: custom prompt for the given model, else a default case is used
-    - --verbose: Enables verbose output for more detailed logs.
-
-### Use Case 2: List Batches
+### 1: Processing an image, video or folder with LLM model
 
 **Command:**
 
 ```bash
-python3 main.py -list --verbose
+python3 main.py [model] --process [path]
+```
+**Description:**
+- Give the program a model (chatgpt, claude, gemini) and path for quick and easy processing.
+- Versatile for single images and videos or folders, works for all models
+
+**Examples:**
+#### Basic
+```bash
+python3 main.py chatgpt --process path/to/file
 ```
 
-Description:
+#### Short-hand verbose
+```bash
+python3 main.py gemini -p path/to/file -v
+```
 
-- -list: Requests a list of available batches.
-- --verbose: Enables verbose output for detailed batch information.
+#### Custom prompt
+```bash
+python3 main.py gemini -p path/to/file -c path/to/custom.txt
+```
 
-
-### Use Case 3: Check Batch
+### 2: Batch processing with ChatGPT
 
 **Command:**
 
 ```bash
-python3 main.py model -check batch_id --verbose
+python3 main.py chatgpt --batch [path]
 ```
 
-Description:
+**Description:**
 
-- model: Specifies the model type (i.e. ChatGPT).
-- -check batch_id: Checks the status or details of the batch with the given batch_id.
-- --verbose: Provides detailed output about the batch check.
+- To be used for cheaper processing on large folders and supports up to 100MB in size. 
+- Supports the automatic option
+- **`NOTE:`** This is only available for the ChatGPT model
 
-### Use Case 4: Export Batch
+**Examples:**
 
-**Command:**
-
+#### Basic automatic processing
 ```bash
-python3 main.py model -export batch_id --verbose
+python3 main.py chatgpt --batch path/to/folder --auto
 ```
 
-- model: Specifies the model type (i.e. ChatGPT).
-- -export batch_id: Exports the batch with the given batch_id.
-- --verbose: Provides detailed output about the export process.
+#### Short-hand
+```bash
+python3 main.py chatgpt -b path/to/folder -a
+```
+
+#### Checking a batch progress (only for non-auto processing)
+```bash
+python3 main.py chatgpt -ch batch_no
+```
+
+#### Export a batch file (only for non-auto processing)
+```bash
+python3 main.py chatgpt -e batch_no
+```
+
+#### List all batch processes
+```bash
+python3 main.py chatgpt -l
+```
+
+### 3: Interference Program
+```bash
+python3 main.py -s [strength] [path] [filter]
+```
+
+**Description:**
+
+- For use to alter images for the purpose of red teaming
+- Example filters include rain, fog, graffiti, brightness and more
+
 
 # Testing
+To ensure that the installation is successful and working correctly, you can run the testing modules provided.
+
+Firstly, ensure pytest is installed:
+```bash
+pip install pytest
+```
+
+Move to the test directory:
+```bash
+cd Tests
+```
+
+To test all at once:
+```bash
+python3 -m unittest discover -s . -p "test_*.py"
+```
+
+To test individually:
+```bash
+python3 -m unittest test_[name].py -v
+
+```
+
 
 # Contributors
+We would like to thank the individuals that have contributed to this project:
+### Team
+**Cohen Rafiq**
+- **Role:** Project Manager, Developer
+- **Contributions:** Gemini API functionality, image manipulation, formatting, CSV output, red teaming
+- **Contact:** 23348918@student.uwa.edu.au
+
+**Joel Cornfield**
+- **Role:** Developer, Tester
+- **Contributions:** Image manipulation, claude API functionality, red teaming, testing
+- **Contact:** 23749925@student.uwa.edu.au
+
+**Feiyue Zhang**
+- **Role:** Developer, Tester
+- **Contributions:** CSV output, testing and red teaming
+- **Contact:** 23734789@student.uwa.edu.au
+
+**Lance Basa**
+- **Role:** Developer, Tester
+- **Contributions:** ChatGPT API functionality, ChatGPT batch processing, primary tester and red teaming
+- **Contact:** 23420659@student.uwa.edu.au
+
+**Jack Langoulant**
+- **Role:** Project Manager, Developer, Tester
+- **Contributions:** Video functionality, ChatGPT API functionality, testing and red teaming
+- **Contact:** 23344707@student.uwa.edu.au
+
+**Lewis Wood**
+- **Role:** Project Manager, Developer
+- **Contributions:** Formatting, Command Line Interface, custom CSV output, code integration and red teaming
+- **Contact:** 23104581@student.uwa.edu.au
 
 # License
 This project is licensed under the Creative Commons License - see the [LICENSE](LICENSE) file for details.

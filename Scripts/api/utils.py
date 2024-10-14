@@ -1,10 +1,14 @@
 import tkinter as tk
 from tkinter import filedialog
 from pathlib import Path
+from pydantic import BaseModel, create_model
+from typing import List, Dict
+from common import AnalysisResponse, verbose_print
 import common
 import cv2
 import base64
 import os
+import sys
 
 
 def check_file_size(file_path: str) -> bool:
@@ -55,7 +59,7 @@ def ask_save_location(default_filename: str):
 
 def get_file_dict(directory_path: Path) -> dict[str, Path]:
     """
-    Generate a dictionary of file paths and labels from a directory.
+    Generate a dictionary of file paths and labels from a directory recursively.
 
     Args:
         directory_path: The path to the directory containing files.
@@ -63,19 +67,28 @@ def get_file_dict(directory_path: Path) -> dict[str, Path]:
     Returns:
         A dictionary where keys are file names and values are full file paths.
     """
-    # NOTE : for validation and testing
+    # NOTE: for validation and testing
     if not directory_path.is_dir() and not directory_path.is_file():
         raise ValueError(f"The provided path {directory_path} is not a valid path")
-    file_dict: dict = {}
+    
+    file_dict: dict[str, Path] = {}
+
     if directory_path.is_file():
         file_dict[directory_path.name] = directory_path
         return file_dict
-    else :
-        for file_path in directory_path.glob('*'):
-            if file_path.is_file() and file_path.suffix in common.VALID_EXTENSIONS:
+
+    # Iterate through all items in the directory
+    for file_path in directory_path.glob('*'):
+        if file_path.is_file(): 
+            if file_path.suffix in common.VALID_EXTENSIONS:
                 file_dict[file_path.name] = file_path
-    if not file_dict:
-        raise ValueError(f"No valid files found in {directory_path}")
+            else:
+                verbose_print(f"Skipping {file_path.name} as it is not a valid file type.")
+        elif file_path.is_dir():
+            # Recursive call for subdirectories
+            subdir_files = get_file_dict(file_path)
+            file_dict.update(subdir_files)
+
     return file_dict
 
 def get_media_type(file_path: Path) -> str:
@@ -122,16 +135,28 @@ def encode_video(video_path: Path, frame_rate_divisor: int = 2) -> list[str]:
         The base64-encoded list of image strings."""
     images: list[str] = []
     cam = cv2.VideoCapture(str(video_path))
-    frame_rate: int = int(cam.get(cv2.CAP_PROP_FPS) / frame_rate_divisor)
     
+    # Get the video's original frame rate
+    fps = cam.get(cv2.CAP_PROP_FPS)
+    
+    # Calculate how many frames to skip for capturing frames every second
+    frame_skip = int(fps)  # Capture every frame at 1 second intervals
+    
+    count = 0
     while True:
         success, frame = cam.read()
         if not success:
             break
-        if len(images) % frame_rate == 0:
+        if count % frame_skip == 0:  # Capture frame every second
             success, buffer = cv2.imencode('.jpg', frame)
             if success:
                 images.append(base64.b64encode(buffer).decode('utf-8'))
+        count += 1
 
     cam.release()
+    
+    # Write to file
+    with open("VideoOut.txt", "w") as video_file:
+        for item in images:
+            video_file.write(item + '\n')  # Ensure each base64 string is on a new line
     return images

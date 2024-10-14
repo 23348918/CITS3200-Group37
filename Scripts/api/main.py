@@ -5,6 +5,8 @@ from auth import authenticate
 from process import process_model
 from batch_operations import print_check_batch, export_batch, list_batches, process_batch
 import sys
+sys.tracebacklimit = 0 # Disable traceback for non-verbose mode
+
 
 ACTIONS: dict[str, callable] = {
     "process": lambda args: process_model(args.llm_model, args.process),
@@ -49,17 +51,21 @@ def parse_arguments() -> argparse.Namespace:
 def main():
     """Main function that redirects to relevent functions based on the arguments."""
     args: argparse.Namespace = parse_arguments()
-    if args.llm_model != "chatgpt" and args.process is None:
-        print("Only chatgpt model is supported for batch processing.")
+    if args.llm_model != "chatgpt" and any  ([args.batch, args.auto, args.check, args.export]): # only chatgpt model is supported for batch operations
+        print("Only chatgpt model is supported for batch processing commands (-b, -l, -e, -ch). see python3 main.py -h for more help.\nTerminating....")
         sys.exit(1)
-
+    
     if args.verbose:
         set_verbose()
+        sys.tracebacklimit = 1 # Enable traceback for verbose mode
 
     authenticate(args.llm_model)
     if args.custom:
         set_custom(args.custom)
 
+    set_prompt(args.prompt)
+    set_custom(args.custom)
+    
     # Execute corresponding action from the ACTIONS dictionary
     for arg in vars(args):
         if (arg in ACTIONS and 

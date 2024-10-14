@@ -1,0 +1,2 @@
+File_name,Model,Description,Reasoning,Action
+Sample2.mp4,gpt-4o-mini,"The car is driving straight on a multi-lane road approaching a traffic signal, with vehicles visible in adjacent lanes.","There is a traffic signal ahead, indicating potential need to stop, depending on the light's color.",Prepare to stop for the traffic signal; remain in the current lane.
