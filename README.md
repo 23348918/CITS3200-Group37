@@ -20,7 +20,7 @@ This document provides a brief overview of how to use the program for various us
 - Command Line Interface (CLI) for image and video processing.
 - Supports multiple LLM models including ChatGPT, Gemini and Claude.
 - Applies image processing techniques such as overlays (fog, graffiti) and filters (blur, brightness).
-- Batch processing of images and videos.
+- Batch processing of images and videos. Note, batch processing a video generates output for each frame.
 - JSON and CSV output formats for LLM responses.
 - Automatic cleanup of generated files to manage storage.
 - User-defined prompts for flexible data extraction and testing.
